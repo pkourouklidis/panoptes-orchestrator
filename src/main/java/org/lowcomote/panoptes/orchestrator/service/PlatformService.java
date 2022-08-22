@@ -5,12 +5,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -29,7 +24,6 @@ import org.springframework.statemachine.config.StateMachineBuilder.Builder;
 import org.springframework.statemachine.guard.Guard;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cloudevents.jackson.JsonFormat;
 
@@ -45,7 +39,6 @@ import panoptesDSL.PanoptesDSLPackage;
 import panoptesDSL.Platform;
 import panoptesDSL.TriggerGroup;
 import panoptesDSL.actionExecutionEntry;
-import panoptesDSL.parameterValueEntry;
 
 @Service
 public class PlatformService {
@@ -59,7 +52,16 @@ public class PlatformService {
 		resourceSet.getPackageRegistry().put(PanoptesDSLPackage.eNS_URI, PanoptesDSLPackage.eINSTANCE);
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
 	}
-
+	
+	public Deployment getDeployment(String name) {
+		for( Deployment d : currentPlatform.getDeployments()) {
+			if(d.getName().equals(name)) {
+				return d;
+			}
+		}
+		return null;
+	}
+	
 	public void updatePlatform(String platformXMI) throws Exception {
 		Platform newPlatform = parsePlatform(platformXMI);
 		for (Deployment d : newPlatform.getDeployments()) {
