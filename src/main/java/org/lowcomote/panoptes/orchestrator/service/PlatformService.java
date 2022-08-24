@@ -6,6 +6,9 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -13,6 +16,9 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.lowcomote.panoptes.orchestrator.api.ActionExecutionRequest;
 import org.lowcomote.panoptes.orchestrator.api.AlgorithmExecutionRequest;
+import org.lowcomote.panoptes.orchestrator.api.AlgorithmExecutionResult;
+import org.lowcomote.panoptes.orchestrator.api.BaseAlgorithmExecutionInfo;
+import org.lowcomote.panoptes.orchestrator.repository.AlgorithmExecutionResultRepository;
 import org.lowcomote.panoptes.orchestrator.repository.StateMachineRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
@@ -46,6 +52,8 @@ public class PlatformService {
 	private ResourceSet resourceSet;
 	@Autowired
 	private StateMachineRepository stateMachineRepository;
+	@Autowired
+	private AlgorithmExecutionResultRepository algorithmExecutionResultRepository;
 
 	public PlatformService() {
 		this.resourceSet = new ResourceSetImpl();
@@ -54,12 +62,46 @@ public class PlatformService {
 	}
 	
 	public Deployment getDeployment(String name) {
-		for( Deployment d : currentPlatform.getDeployments()) {
-			if(d.getName().equals(name)) {
-				return d;
+		if (currentPlatform!=null) {
+			for( Deployment d : currentPlatform.getDeployments()) {
+				if(d.getName().equals(name)) {
+					return d;
+				}
 			}
 		}
 		return null;
+	}
+	
+	public List<Deployment> getDeployments() {
+		if (currentPlatform!=null) {
+			return currentPlatform.getDeployments();
+		}
+		return new ArrayList<Deployment>();
+	}
+	
+	public BaseAlgorithmExecutionInfo getSpecificExecutionResults(String deploymentName, String algorithmExecutionName, String executionType){
+		Deployment deployment = getDeployment(deploymentName);
+		if (deployment != null) {
+			if (executionType.equals("baseAlgorihtmExecution")){
+				BaseAlgorithmExecution algorithmExecution = null;
+				for (AlgorithmExecution execution : deployment.getAlgorithmexecutions()) {
+					if (execution.getName().equals(algorithmExecutionName) && execution.eClass().getName().equals(executionType)) {
+						algorithmExecution = (BaseAlgorithmExecution)execution;
+						break;
+					}
+				}
+				if (algorithmExecution != null) {
+					return getSpecificBaseAlgorihtmExecutionResults(deployment, algorithmExecution);
+				}
+				
+			}
+		}
+		return null;
+	}
+	
+	public BaseAlgorithmExecutionInfo getSpecificBaseAlgorihtmExecutionResults(Deployment deployment, BaseAlgorithmExecution algorithmExecution){
+		List<AlgorithmExecutionResult> results = algorithmExecutionResultRepository.findByDeploymentAndAlgorithmExecution(deployment.getName(), algorithmExecution.getName());
+		return new BaseAlgorithmExecutionInfo(algorithmExecution, results);
 	}
 	
 	public void updatePlatform(String platformXMI) throws Exception {

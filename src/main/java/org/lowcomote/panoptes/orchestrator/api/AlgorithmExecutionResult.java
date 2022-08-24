@@ -1,6 +1,14 @@
 package org.lowcomote.panoptes.orchestrator.api;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+
+@Entity
 public class AlgorithmExecutionResult {
+	@Id
+    @GeneratedValue
+	private String id;
 	private String deployment;
 	private String algorithmExecution;
 	private int level;

@@ -13,9 +13,8 @@ public class EventController {
 	@Autowired
 	private EventService eventService;
 	
-	@PostMapping(value = "/api/events")
+	@PostMapping(value = "/api/v1/events")
 	void ingestEvent(@RequestBody CloudEvent event) throws Exception {
-		System.out.println(event.getType());
 		eventService.ingestEvent(event);
 	}
 

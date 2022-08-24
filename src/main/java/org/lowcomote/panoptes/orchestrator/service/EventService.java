@@ -2,6 +2,7 @@ package org.lowcomote.panoptes.orchestrator.service;
 
 import org.lowcomote.panoptes.orchestrator.api.CountableTrigger;
 import org.lowcomote.panoptes.orchestrator.api.AlgorithmExecutionResult;
+import org.lowcomote.panoptes.orchestrator.repository.AlgorithmExecutionResultRepository;
 import org.lowcomote.panoptes.orchestrator.repository.StateMachineRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
@@ -20,6 +21,8 @@ public class EventService {
 	@Autowired
 	private StateMachineRepository stateMachineRepository;
 	@Autowired
+	private AlgorithmExecutionResultRepository algorithmExecutionResultRepository;
+	@Autowired
 	ObjectMapper objectMapper;
 
 	public void ingestEvent(CloudEvent event) {
@@ -27,6 +30,7 @@ public class EventService {
 			AlgorithmExecutionResult executionResult = mapData(event,
 					PojoCloudEventDataMapper.from(objectMapper, AlgorithmExecutionResult.class)).getValue();
 			ingestAlgorithmExecutionResult(executionResult);
+			algorithmExecutionResultRepository.save(executionResult);
 		}
 		else if (event.getType().equals("org.lowcomote.panoptes.trigger.sample")) {
 			CountableTrigger trigger = mapData(event,
