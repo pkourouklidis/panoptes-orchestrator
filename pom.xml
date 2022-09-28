@@ -67,13 +67,6 @@
 			<version>3.7.100</version>
 		</dependency>
 		<dependency>
-			<groupId>org.eclipse.epsilon</groupId>
-			<artifactId>org.eclipse.epsilon.evl.emf.validation</artifactId>
-			<version>2.2.0</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/lib/org.eclipse.epsilon.evl.emf.validation.jar</systemPath>
-		</dependency>
-		<dependency>
 			<groupId>org.lowcomote.panoptes</groupId>
 			<artifactId>panoptesDSL</artifactId>
 			<version>0.1.0</version>
