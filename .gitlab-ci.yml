@@ -1,0 +1,16 @@
+variables:
+  MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DinstallAtEnd=true -DdeployAtEnd=true"
+  PROJECT_NAME: "orchestrator"
+  DOCKER_PROJECT_NAME: "panoptes"
+
+stages:
+  - build
+
+build:
+  image: maven:3.8-amazoncorretto-17
+  stage: build
+  script:
+    - mvn -Dbranch=$CI_MERGE_REQUEST_TARGET_BRANCH_NAME clean compile package com.google.cloud.tools:jib-maven-plugin:3.2.1:build -Dimage=registry.docker.nat.bt.com/$DOCKER_PROJECT_NAME/$PROJECT_NAME:$CI_COMMIT_REF_NAME -Djib.to.auth.username=$PANOPTES_IMAGE_REGISTRY_USER -Djib.to.auth.password=$PANOPTES_IMAGE_REGISTRY_PASSWORD -Djib.allowInsecureRegistries=true
+  only:
+  - master
