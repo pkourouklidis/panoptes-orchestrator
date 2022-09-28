@@ -20,8 +20,10 @@ import org.lowcomote.panoptes.orchestrator.api.AlgorithmExecutionResult;
 import org.lowcomote.panoptes.orchestrator.api.BaseAlgorithmExecutionInfo;
 import org.lowcomote.panoptes.orchestrator.repository.AlgorithmExecutionResultRepository;
 import org.lowcomote.panoptes.orchestrator.repository.StateMachineRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.action.Action;
@@ -35,8 +37,8 @@ import io.cloudevents.jackson.JsonFormat;
 
 import io.cloudevents.CloudEvent;
 import io.cloudevents.core.builder.CloudEventBuilder;
-import io.cloudevents.core.message.MessageWriter;
 import io.cloudevents.http.HttpMessageFactory;
+import io.cloudevents.http.impl.HttpMessageWriter;
 import panoptesDSL.AlgorithmExecution;
 import panoptesDSL.BaseAlgorithmExecution;
 import panoptesDSL.CompositeTrigger;
@@ -49,13 +51,13 @@ import panoptesDSL.actionExecutionEntry;
 @Service
 public class PlatformService {
 	private Platform currentPlatform;
-	private ResourceSet resourceSet;
-	@Autowired
-	private StateMachineRepository stateMachineRepository;
-	@Autowired
-	private AlgorithmExecutionResultRepository algorithmExecutionResultRepository;
+	private final ResourceSet resourceSet;
+	private final StateMachineRepository stateMachineRepository;
+	private final AlgorithmExecutionResultRepository algorithmExecutionResultRepository;
 
-	public PlatformService() {
+	public PlatformService(StateMachineRepository stateMachineRepository, AlgorithmExecutionResultRepository algorithmExecutionResultRepository) {
+		this.stateMachineRepository = stateMachineRepository;
+		this.algorithmExecutionResultRepository = algorithmExecutionResultRepository;
 		this.resourceSet = new ResourceSetImpl();
 		resourceSet.getPackageRegistry().put(PanoptesDSLPackage.eNS_URI, PanoptesDSLPackage.eINSTANCE);
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
@@ -79,19 +81,19 @@ public class PlatformService {
 		return new ArrayList<Deployment>();
 	}
 	
-	public BaseAlgorithmExecutionInfo getSpecificExecutionResults(String deploymentName, String algorithmExecutionName, String executionType){
+	public BaseAlgorithmExecutionInfo getSpecificExecutionResults(String deploymentName, String algorithmExecutionName, String executionType, Integer count){
 		Deployment deployment = getDeployment(deploymentName);
 		if (deployment != null) {
-			if (executionType.equals("baseAlgorihtmExecution")){
+			if (executionType.equals("baseAlgorithmExecutions")){
 				BaseAlgorithmExecution algorithmExecution = null;
 				for (AlgorithmExecution execution : deployment.getAlgorithmexecutions()) {
-					if (execution.getName().equals(algorithmExecutionName) && execution.eClass().getName().equals(executionType)) {
+					if (execution.getName().equals(algorithmExecutionName) && execution.eClass().getName().equals("BaseAlgorithmExecution")) {
 						algorithmExecution = (BaseAlgorithmExecution)execution;
 						break;
 					}
 				}
 				if (algorithmExecution != null) {
-					return getSpecificBaseAlgorihtmExecutionResults(deployment, algorithmExecution);
+					return getSpecificBaseAlgorihtmExecutionResults(deployment, algorithmExecution, count);
 				}
 				
 			}
@@ -99,16 +101,20 @@ public class PlatformService {
 		return null;
 	}
 	
-	public BaseAlgorithmExecutionInfo getSpecificBaseAlgorihtmExecutionResults(Deployment deployment, BaseAlgorithmExecution algorithmExecution){
-		List<AlgorithmExecutionResult> results = algorithmExecutionResultRepository.findByDeploymentAndAlgorithmExecution(deployment.getName(), algorithmExecution.getName());
+	public BaseAlgorithmExecutionInfo getSpecificBaseAlgorihtmExecutionResults(Deployment deployment, BaseAlgorithmExecution algorithmExecution, Integer count){
+		Pageable pageable = PageRequest.of(0, count, Sort.by(Sort.Direction.DESC, "date"));
+		List<AlgorithmExecutionResult> results = algorithmExecutionResultRepository.findByDeploymentAndAlgorithmExecution(deployment.getName(), algorithmExecution.getName(), pageable);
 		return new BaseAlgorithmExecutionInfo(algorithmExecution, results);
 	}
 	
 	public void updatePlatform(String platformXMI) throws Exception {
 		Platform newPlatform = parsePlatform(platformXMI);
+		stateMachineRepository.clear();
 		for (Deployment d : newPlatform.getDeployments()) {
-			StateMachine<String, String> sm = buildStateMachine(d);
-			stateMachineRepository.addMachine(d.getName(), sm);
+			if (d.getTriggerGroups().size() > 0) {
+				StateMachine<String, String> sm = buildStateMachine(d);
+				stateMachineRepository.addMachine(d.getName(), sm);
+			}
 		}
 		this.currentPlatform = newPlatform;
 	}
@@ -123,13 +129,12 @@ public class PlatformService {
 		Builder<String, String> builder = StateMachineBuilder.builder();
 		builder.configureStates().withStates().initial("IDLE");
 		builder.configureConfiguration().withConfiguration().beanFactory(new StaticListableBeanFactory())
-				.machineId(deployment.getName());
+				.machineId(deployment.getName()).autoStartup(true);
 		//Add one transition per trigger group that sends algorithm execution requests
 		for (TriggerGroup triggerGroup : deployment.getTriggerGroups()) {
 			builder.configureTransitions()
-				.withExternal()
+				.withInternal()
 				.source("IDLE")
-				.target("IDLE")
 				.event("TRIGGER")
 				.guard(buildGuard(triggerGroup))
 				.action(buildAlgorithmExecutionTrigger(triggerGroup));
@@ -139,9 +144,8 @@ public class PlatformService {
 		for (AlgorithmExecution execution : deployment.getAlgorithmexecutions()) {
 			if (execution.eClass().getName().equals("BaseAlgorithmExecution")) {
 				builder.configureTransitions()
-				.withExternal()
+				.withInternal()
 				.source("IDLE")
-				.target("IDLE")
 				.event(execution.getName().concat("-EXECUTIONRESULT"))
 				.action(buildActionExecutionTrigger((BaseAlgorithmExecution)execution));
 			}
@@ -165,25 +169,24 @@ public class PlatformService {
 		return new Guard<String, String>() {
 			@Override
 			synchronized public boolean evaluate(StateContext<String, String> context) {
-				
 				int count;
 				// increment relevant counter
 				switch ((String) context.getMessage().getHeaders().get("type")) {
 				case "sample":
 					count = (int) context.getMessage().getHeaders().get("count");
-					context.getExtendedState().getVariables().put("samples".concat(triggerGroupHash), (int) context
-							.getExtendedState().getVariables().get("samples".concat(triggerGroupHash)) + count);
+					context.getExtendedState().getVariables().put("sample".concat(triggerGroupHash), (int) context
+							.getExtendedState().getVariables().get("sample".concat(triggerGroupHash)) + count);
 					break;
 				case "prediction":
 					count = (int) context.getMessage().getHeaders().get("count");
-					context.getExtendedState().getVariables().put("predictions".concat(triggerGroupHash),
+					context.getExtendedState().getVariables().put("prediction".concat(triggerGroupHash),
 							(int) context.getExtendedState().getVariables()
-									.get("predictions".concat(triggerGroupHash)) + count);
+									.get("prediction".concat(triggerGroupHash)) + count);
 					break;
 				case "label":
 					count = (int) context.getMessage().getHeaders().get("count");
-					context.getExtendedState().getVariables().put("labels".concat(triggerGroupHash), (int) context
-							.getExtendedState().getVariables().get("labels".concat(triggerGroupHash)) + count);
+					context.getExtendedState().getVariables().put("label".concat(triggerGroupHash), (int) context
+							.getExtendedState().getVariables().get("label".concat(triggerGroupHash)) + count);
 					break;
 				case "timer":
 					context.getExtendedState().getVariables().put("timer".concat(triggerGroupHash), true);
@@ -201,21 +204,21 @@ public class PlatformService {
 
 					if (compositeTrigger.getSt() != null) {
 						if ((int) context.getExtendedState().getVariables()
-								.get("samples".concat(triggerGroupHash)) < compositeTrigger.getSt().getFrequency()) {
+								.get("sample".concat(triggerGroupHash)) < compositeTrigger.getSt().getFrequency()) {
 							return false;
 						}
 					}
 
 					if (compositeTrigger.getPt() != null) {
 						if ((int) context.getExtendedState().getVariables().get(
-								"predictions".concat(triggerGroupHash)) < compositeTrigger.getPt().getFrequency()) {
+								"prediction".concat(triggerGroupHash)) < compositeTrigger.getPt().getFrequency()) {
 							return false;
 						}
 					}
 
 					if (compositeTrigger.getLt() != null) {
 						if ((int) context.getExtendedState().getVariables()
-								.get("labels".concat(triggerGroupHash)) < compositeTrigger.getLt().getFrequency()) {
+								.get("label".concat(triggerGroupHash)) < compositeTrigger.getLt().getFrequency()) {
 							return false;
 						}
 					}
@@ -251,10 +254,9 @@ public class PlatformService {
 						httpUrlConnection.setRequestMethod("POST");
 						httpUrlConnection.setDoOutput(true);
 						httpUrlConnection.setDoInput(false);
-						MessageWriter messageWriter = createMessageWriter(httpUrlConnection);
+						HttpMessageWriter messageWriter = createMessageWriter(httpUrlConnection);
 						messageWriter.writeStructured(event, JsonFormat.CONTENT_TYPE);
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					context.getExtendedState().getVariables().put("lastTrigger".concat(triggerGroupHash),
@@ -293,10 +295,9 @@ public class PlatformService {
 						httpUrlConnection.setRequestMethod("POST");
 						httpUrlConnection.setDoOutput(true);
 						httpUrlConnection.setDoInput(false);
-						MessageWriter messageWriter = createMessageWriter(httpUrlConnection);
+						HttpMessageWriter messageWriter = createMessageWriter(httpUrlConnection);
 						messageWriter.writeStructured(event, JsonFormat.CONTENT_TYPE);
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
@@ -304,7 +305,7 @@ public class PlatformService {
 		};
 	}
 	
-	private MessageWriter createMessageWriter(HttpURLConnection httpUrlConnection) {
+	private HttpMessageWriter createMessageWriter(HttpURLConnection httpUrlConnection) {
 		return HttpMessageFactory.createWriter(httpUrlConnection::setRequestProperty, body -> {
 			try {
 				if (body != null) {

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="ASCII"?>
+<org.lowcomote.panoptes:Platform xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:org.lowcomote.panoptes="http://www.lowcomote.org/panoptes/panoptesdsl" xmi:id="_7akLcNzbEeyJX6FwfOAF8A">
+  <deployments xmi:id="_8Tv2MNzbEeyJX6FwfOAF8A" name="d2" mlModel="_cQ5TcOZMEeyqS7IBYz-byQ">
+    <algorithmexecutions xsi:type="org.lowcomote.panoptes:BaseAlgorithmExecution" xmi:id="_5PhD4DQ1Ee25aJhTaMbBMw" name="exec1" currentIOValues="_fAg7YOZMEeyqS7IBYz-byQ" historicIOValues="_fAg7YOZMEeyqS7IBYz-byQ" algorithm="_yyO3YDQ1Ee25aJhTaMbBMw">
+      <ActionExecutionMap xmi:id="_ErrlMDQ2Ee25aJhTaMbBMw" key="1" value="_HwqZIDQ2Ee25aJhTaMbBMw"/>
+    </algorithmexecutions>
+    <triggerGroups xmi:id="_uu2hgDQ1Ee25aJhTaMbBMw" targets="_5PhD4DQ1Ee25aJhTaMbBMw">
+      <compositeTriggers xmi:id="__2ibMDQ1Ee25aJhTaMbBMw">
+        <st xmi:id="_Ad8ZcDQ2Ee25aJhTaMbBMw" frequency="1"/>
+      </compositeTriggers>
+    </triggerGroups>
+    <actionExecutions xmi:id="_HwqZIDQ2Ee25aJhTaMbBMw" name="ae1" action="_It0TcPa1Eeykad7bAjwi4A"/>
+  </deployments>
+  <algorithms xsi:type="org.lowcomote.panoptes:BaseAlgorithm" xmi:id="_yyO3YDQ1Ee25aJhTaMbBMw" name="KS" driftLevels="2" runtime="_wUAhcDQ1Ee25aJhTaMbBMw" strict="true">
+    <supportedTypes>continuous</supportedTypes>
+  </algorithms>
+  <algorithmRuntimes xsi:type="org.lowcomote.panoptes:BaseAlgorithmRuntime" xmi:id="_wUAhcDQ1Ee25aJhTaMbBMw" name="pythonFunction"/>
+  <featureStore xmi:id="_LZUHINzcEeyJX6FwfOAF8A">
+    <features xmi:id="_fAg7YOZMEeyqS7IBYz-byQ" name="f1"/>
+    <labels xmi:id="_-Oq68DQ0Ee25aJhTaMbBMw" name="l1" type="categorical"/>
+  </featureStore>
+  <actions xmi:id="_It0TcPa1Eeykad7bAjwi4A" name="action1"/>
+  <mlModels xmi:id="_cQ5TcOZMEeyqS7IBYz-byQ" name="m1" inputs="_fAg7YOZMEeyqS7IBYz-byQ">
+    <output xmi:id="_3EjlUOcfEeyqS7IBYz-byQ" name="p1" label="_-Oq68DQ0Ee25aJhTaMbBMw"/>
+  </mlModels>
+</org.lowcomote.panoptes:Platform>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="ASCII"?>
+<org.lowcomote.panoptes:Platform xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:org.lowcomote.panoptes="http://www.lowcomote.org/panoptes/panoptesdsl" xmi:id="_7akLcNzbEeyJX6FwfOAF8A">
+  <deployments xmi:id="_8Tv2MNzbEeyJX6FwfOAF8A" name="d1" mlModel="_cQ5TcOZMEeyqS7IBYz-byQ"/>
+  <featureStore xmi:id="_LZUHINzcEeyJX6FwfOAF8A">
+    <features xmi:id="_fAg7YOZMEeyqS7IBYz-byQ" name="f1"/>
+    <labels xmi:id="_-Oq68DQ0Ee25aJhTaMbBMw" name="l1" type="categorical"/>
+  </featureStore>
+  <actions xmi:id="_It0TcPa1Eeykad7bAjwi4A" name="action1"/>
+  <mlModels xmi:id="_cQ5TcOZMEeyqS7IBYz-byQ" name="m1" inputs="_fAg7YOZMEeyqS7IBYz-byQ">
+    <output xmi:id="_3EjlUOcfEeyqS7IBYz-byQ" name="p1" label="_-Oq68DQ0Ee25aJhTaMbBMw"/>
+  </mlModels>
+</org.lowcomote.panoptes:Platform>

@@ -47,6 +47,7 @@ public class EventService {
 		sm.sendEvent(m);
 	}
 	
+	@SuppressWarnings("deprecation")
 	private void ingestCountableTrigger(CountableTrigger trigger) {
 		StateMachine<String, String> sm = stateMachineRepository.getMachine(trigger.getDeployment());
 		Message<String> m = MessageBuilder.withPayload("TRIGGER")

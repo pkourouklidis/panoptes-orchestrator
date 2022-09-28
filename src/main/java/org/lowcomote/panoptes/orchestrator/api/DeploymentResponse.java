@@ -19,7 +19,6 @@ public class DeploymentResponse {
 	public DeploymentResponse(Deployment deployment) {
 		this.id = deployment.getName();
 		this.modelid = deployment.getMlModel().getName();
-		this.id = deployment.getName();
 		this.status = "running";
 		this.healthy = true;
 		List<Map<Object, Object>> observationList = new ArrayList<Map<Object, Object>>();

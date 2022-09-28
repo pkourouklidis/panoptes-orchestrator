@@ -1,5 +1,7 @@
 package org.lowcomote.panoptes.orchestrator.api;
 
+import java.util.Date;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -8,11 +10,12 @@ import javax.persistence.Id;
 public class AlgorithmExecutionResult {
 	@Id
     @GeneratedValue
-	private String id;
+	private int id;
 	private String deployment;
 	private String algorithmExecution;
 	private int level;
 	private String rawResult;
+	private Date date;
 
 	public String getDeployment() {
 		return deployment;
@@ -44,5 +47,13 @@ public class AlgorithmExecutionResult {
 
 	public void setRawResult(String rawResult) {
 		this.rawResult = rawResult;
+	}
+
+	public Date getDate() {
+		return date;
+	}
+
+	public void setDate(Date date) {
+		this.date = date;
 	}
 }

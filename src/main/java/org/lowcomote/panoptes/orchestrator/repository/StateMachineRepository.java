@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class StateMachineRepository {
 
-	private HashMap<String, StateMachine<String,String>> machines;
+	private HashMap<String, StateMachine<String,String>> machines = new HashMap<String, StateMachine<String, String>>();
 	
 	public void addMachine(String machineId, StateMachine<String,String> machine) {
 		machines.put(machineId, machine);
@@ -19,5 +19,9 @@ public class StateMachineRepository {
 	
 	public void deleteMachine(String machineId) {
 		machines.remove(machineId);
+	}
+	
+	public void clear() {
+		machines = new HashMap<String, StateMachine<String, String>>();
 	}
 }
