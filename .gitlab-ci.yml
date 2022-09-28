@@ -11,6 +11,6 @@ build:
   image: maven:3.8-amazoncorretto-17
   stage: build
   script:
-    -echo $PANOPTES_IMAGE_REGISTRY_USER
+  - echo $PANOPTES_IMAGE_REGISTRY_USER
   only:
   - master
