@@ -11,6 +11,6 @@ build:
   image: maven:3.8-amazoncorretto-17
   stage: build
   script:
-  - echo $PANOPTES_IMAGE_REGISTRY_USER
+    - mvn -Dbranch=$CI_MERGE_REQUEST_TARGET_BRANCH_NAME clean compile package com.google.cloud.tools:jib-maven-plugin:3.2.1:build -Dimage=registry.docker.nat.bt.com/$DOCKER_PROJECT_NAME/$PROJECT_NAME:$CI_COMMIT_REF_NAME -Djib.allowInsecureRegistries=true
   only:
   - master
