@@ -43,6 +43,7 @@ import panoptesDSL.AlgorithmExecution;
 import panoptesDSL.BaseAlgorithmExecution;
 import panoptesDSL.CompositeTrigger;
 import panoptesDSL.Deployment;
+import panoptesDSL.Model;
 import panoptesDSL.PanoptesDSLPackage;
 import panoptesDSL.Platform;
 import panoptesDSL.TriggerGroup;
@@ -79,6 +80,13 @@ public class PlatformService {
 			return currentPlatform.getDeployments();
 		}
 		return new ArrayList<Deployment>();
+	}
+	
+	public List<Model> getModels() {
+		if (currentPlatform!=null) {
+			return currentPlatform.getMlModels();
+		}
+		return new ArrayList<Model>();
 	}
 	
 	public BaseAlgorithmExecutionInfo getSpecificExecutionResults(String deploymentName, String algorithmExecutionName, String executionType, Integer count){

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.lowcomote.panoptes.orchestrator.api.BaseAlgorithmExecutionInfo;
 import org.lowcomote.panoptes.orchestrator.api.DeploymentResponse;
+import org.lowcomote.panoptes.orchestrator.api.ModelResponse;
 import org.lowcomote.panoptes.orchestrator.service.PlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import panoptesDSL.Deployment;
+import panoptesDSL.Model;
 
 @RestController
 public class PlatformController {
@@ -59,6 +61,16 @@ public class PlatformController {
 				executionType, count);
 		if (response == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found");
+		}
+		return response;
+	}
+	
+	@GetMapping(value = "/api/v1/models", produces = "application/json")
+	public List<ModelResponse> getModels() {
+		List<Model> models = platformService.getModels();
+		List<ModelResponse> response = new ArrayList<ModelResponse>();
+		for (Model m : models) {
+			response.add(new ModelResponse(m));
 		}
 		return response;
 	}
