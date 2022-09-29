@@ -18,6 +18,7 @@ public class DeploymentResponse {
 
 	public DeploymentResponse(Deployment deployment) {
 		this.id = deployment.getName();
+		this.displayName = deployment.getName();
 		this.modelid = deployment.getMlModel().getName();
 		this.status = "running";
 		this.healthy = true;
@@ -32,7 +33,7 @@ public class DeploymentResponse {
 		Map<Object, Object> higherOrderAlgorithmExecutionsEntry = new HashMap<Object,Object>();
 		higherOrderAlgorithmExecutionsEntry.put("type", "HigherOrderAlgorithmExecution");
 		List<String> higherOrderAlgorithmExecutionList = new ArrayList<String>();
-		baseAlgorithmExecutionsEntry.put("executions", higherOrderAlgorithmExecutionList);
+		higherOrderAlgorithmExecutionsEntry.put("executions", higherOrderAlgorithmExecutionList);
 		observationList.add(higherOrderAlgorithmExecutionsEntry);
 		
 		for (AlgorithmExecution execution : deployment.getAlgorithmexecutions()) {
