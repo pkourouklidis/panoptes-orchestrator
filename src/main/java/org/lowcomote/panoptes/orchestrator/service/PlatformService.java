@@ -18,6 +18,7 @@ import org.lowcomote.panoptes.orchestrator.api.ActionExecutionRequest;
 import org.lowcomote.panoptes.orchestrator.api.AlgorithmExecutionRequest;
 import org.lowcomote.panoptes.orchestrator.api.AlgorithmExecutionResult;
 import org.lowcomote.panoptes.orchestrator.api.BaseAlgorithmExecutionInfo;
+import org.lowcomote.panoptes.orchestrator.api.SingleBaseAlgorithmExecutionInfo;
 import org.lowcomote.panoptes.orchestrator.repository.AlgorithmExecutionResultRepository;
 import org.lowcomote.panoptes.orchestrator.repository.StateMachineRepository;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
@@ -113,6 +114,30 @@ public class PlatformService {
 		Pageable pageable = PageRequest.of(0, count, Sort.by(Sort.Direction.DESC, "date"));
 		List<AlgorithmExecutionResult> results = algorithmExecutionResultRepository.findByDeploymentAndAlgorithmExecution(deployment.getName(), algorithmExecution.getName(), pageable);
 		return new BaseAlgorithmExecutionInfo(algorithmExecution, results);
+	}
+	
+	public List<SingleBaseAlgorithmExecutionInfo> getExecutionResultsByType(String deploymentName, String executionType, Integer count) {
+		Deployment deployment = getDeployment(deploymentName);
+		if (deployment != null) {
+			if (executionType.equals("baseAlgorithmExecutions")){
+				Pageable pageable = PageRequest.of(0, count, Sort.by(Sort.Direction.DESC, "date"));
+				List<AlgorithmExecutionResult> results = algorithmExecutionResultRepository.findByDeploymentAndExecutionType(deploymentName, "baseAlgorithmExecution", pageable);
+				List<SingleBaseAlgorithmExecutionInfo> finalResult = new ArrayList<SingleBaseAlgorithmExecutionInfo>();
+				for (AlgorithmExecutionResult result : results) {
+					BaseAlgorithmExecution executionDefinition = null;
+					for (AlgorithmExecution execution : deployment.getAlgorithmexecutions()) {
+						if (execution.getName().equals(result.getAlgorithmExecution()) && execution.eClass().getName().equals("BaseAlgorithmExecution")) {
+							executionDefinition = (BaseAlgorithmExecution) execution;
+						}
+					}
+					if (executionDefinition != null) {
+						finalResult.add(new SingleBaseAlgorithmExecutionInfo(executionDefinition, result));
+					}
+				}
+				return finalResult;
+			}
+		}
+		return null;
 	}
 	
 	public void updatePlatform(String platformXMI) throws Exception {

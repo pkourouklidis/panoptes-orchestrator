@@ -10,4 +10,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AlgorithmExecutionResultRepository extends CrudRepository<AlgorithmExecutionResult, String>{
 	public List<AlgorithmExecutionResult> findByDeploymentAndAlgorithmExecution(String deployment, String algorihtmExecution, Pageable pageable);
+	public List<AlgorithmExecutionResult> findByDeploymentAndExecutionType(String deployment, String executionType, Pageable pageable);
 }

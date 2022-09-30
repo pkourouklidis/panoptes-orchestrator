@@ -36,6 +36,20 @@ public class AlgorirhmExecutionResultRepositoryTest {
 	}
 	
 	@Test
+	void saveThenFindByDeploymentAndExecutionType() {
+		AlgorithmExecutionResult result = new AlgorithmExecutionResult();
+		result.setDeployment("testDeployment");
+		result.setAlgorithmExecution("testAlgorithmExecution");
+		result.setExecutionType("baseAlgorithmExecution");
+		result.setDate(Date.from(java.time.Instant.now()));
+		repository.save(result);
+		Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "date"));
+		List<AlgorithmExecutionResult> results = repository.findByDeploymentAndExecutionType("testDeployment", "baseAlgorithmExecution", pageable);
+		assertTrue(results.size() == 1);
+		assertTrue(results.get(0).getAlgorithmExecution().equals("testAlgorithmExecution"));
+	}
+	
+	@Test
 	void testOrder() throws ParseException {
 		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 		AlgorithmExecutionResult oldResult = new AlgorithmExecutionResult();

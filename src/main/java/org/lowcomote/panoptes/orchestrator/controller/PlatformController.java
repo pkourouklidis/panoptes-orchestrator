@@ -6,6 +6,7 @@ import java.util.List;
 import org.lowcomote.panoptes.orchestrator.api.BaseAlgorithmExecutionInfo;
 import org.lowcomote.panoptes.orchestrator.api.DeploymentResponse;
 import org.lowcomote.panoptes.orchestrator.api.ModelResponse;
+import org.lowcomote.panoptes.orchestrator.api.SingleBaseAlgorithmExecutionInfo;
 import org.lowcomote.panoptes.orchestrator.service.PlatformService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -58,6 +59,20 @@ public class PlatformController {
 			count = 1;
 		}
 		BaseAlgorithmExecutionInfo response = platformService.getSpecificExecutionResults(deploymentName, executionName,
+				executionType, count);
+		if (response == null) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found");
+		}
+		return response;
+	}
+	
+	@GetMapping(value = "/api/v1/deployments/{deploymentName}/{executionType}", produces = "application/json")
+	public List<SingleBaseAlgorithmExecutionInfo> getSpecificExecutionResults(@PathVariable String deploymentName,
+			@PathVariable String executionType,@RequestParam(required = false) Integer count) {
+		if (count == null) {
+			count = 1;
+		}
+		List<SingleBaseAlgorithmExecutionInfo> response = platformService.getExecutionResultsByType(deploymentName,
 				executionType, count);
 		if (response == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found");

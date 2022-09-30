@@ -29,6 +29,7 @@ public class EventService {
 		if (event.getType().equals("org.lowcomote.panoptes.baseAlgorithmExecution.result")) {
 			AlgorithmExecutionResult executionResult = mapData(event,
 					PojoCloudEventDataMapper.from(objectMapper, AlgorithmExecutionResult.class)).getValue();
+			executionResult.setExecutionType("baseAlgorithmExecution");
 			ingestAlgorithmExecutionResult(executionResult);
 			algorithmExecutionResultRepository.save(executionResult);
 		}

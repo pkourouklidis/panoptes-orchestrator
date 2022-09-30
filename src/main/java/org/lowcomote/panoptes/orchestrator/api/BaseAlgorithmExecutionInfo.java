@@ -24,6 +24,7 @@ public class BaseAlgorithmExecutionInfo {
 		}
 		for (AlgorithmExecutionResult result : results) {
 			Map<Object, Object> observation = new HashMap<Object, Object>();
+			observation.put("timestamp", result.getDate());
 			observation.put("discretisedValue", result.getLevel());
 			observation.put("rawValue", result.getRawResult());
 			observation.put("UnacceptableShift", result.getLevel()>0);

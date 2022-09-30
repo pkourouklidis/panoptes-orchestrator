@@ -16,6 +16,7 @@ public class AlgorithmExecutionResult {
 	private int level;
 	private String rawResult;
 	private Date date;
+	private String executionType;
 
 	public String getDeployment() {
 		return deployment;
@@ -55,5 +56,13 @@ public class AlgorithmExecutionResult {
 
 	public void setDate(Date date) {
 		this.date = date;
+	}
+
+	public String getExecutionType() {
+		return executionType;
+	}
+
+	public void setExecutionType(String executionType) {
+		this.executionType = executionType;
 	}
 }
