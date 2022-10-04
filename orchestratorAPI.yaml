@@ -1,0 +1,233 @@
+openapi: 3.0.3
+info:
+  title: Panoptes Orchestrator - OpenAPI 3.0
+  description: OpenAPI specification for Panoptes Orchestrator
+  contact:
+    email: panagiotis.kourouklidis@bt.com
+  version: 0.1.0
+servers:
+  - url: http://orchestrator.panoptes.uk/api/v1
+paths:
+  /models:
+    get:
+      summary: Every ML model currently available in the Platform
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Model'
+  /deployments:
+    get:
+      summary: Every Deployment currently available in the Platform
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Deployment'
+  /deployments/{deploymentName}:
+    get:
+      summary: Returns specific deployment if it is available in the Platform
+      parameters:
+        - name: deploymentName
+          in: path
+          description: Name of Deployment whose execution results we want
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deployment'
+        '404':
+          description: Deployment not found
+  /deployments/{deploymentName}/{executionType}/{executionName}:
+    get:
+      summary: Returns the last N execution results of a specific execution
+      parameters:
+        - name: deploymentName
+          in: path
+          description: Name of Deployment whose execution results we want
+          required: true
+          schema:
+            type: string
+        - name: executionType
+          in: path
+          description: Execution type of the execution
+          required: true
+          schema:
+            type: string
+        - name: executionName
+          in: path
+          description: Name of execution whose results we want
+          required: true
+          schema:
+            type: string
+        - name: count
+          in: query
+          description: Number of execution results that we want
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionInfo'
+        '404':
+          description: Execution not found
+  /deployments/{deploymentName}/{executionType}:
+    get:
+      summary: Returns the last N execution results from all executions of a specific execution type
+      parameters:
+        - name: deploymentName
+          in: path
+          description: Name of Deployment whose execution results we want
+          required: true
+          schema:
+            type: string
+        - name: executionType
+          in: path
+          description: Execution type of the execution
+          required: true
+          schema:
+            type: string
+        - name: count
+          in: query
+          description: Number of execution results that we want
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionCombinedInfoResult'
+        '404':
+          description: Execution not found
+components:
+  schemas:
+    Model:
+      required:
+        - id
+      type: object
+      properties:
+        id:
+          type: string
+          example: model1
+        displayName:
+          type: string
+          example: Model 1
+    Deployment:
+      required:
+        - id
+      type: object
+      properties:
+        id:
+          type: string
+          example: deployment1
+        displayName:
+          type: string
+          example: Deployment 1
+        modelid:
+          type: string
+          example: model1
+        status:
+          type: string
+          example: running
+        healthy:
+          type: boolean
+          example: true
+        observations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Observation'
+    Observation:
+      type: object
+      properties:
+        type:
+          type: string
+          example: baseAlgorihtmExecution
+        executions:
+          type: array
+          items:
+            type: string
+          example: [exec1, exec2]
+    ExecutionInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          example: exec1
+        algorihtm:
+          type: string
+          example: kolmogorov-smirnov
+        historicFeature:
+          type: array
+          items:
+            type: string
+          example: [feature1, feature2]
+        liveFeature:
+          type: array
+          items:
+            type: string
+          example: [feature1, feature2]
+        observations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExecutionResult'
+    ExecutionResult:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          example: '2022-03-01T09:00:00Z'
+        rawValue:
+          type: string
+          example: 0.05
+        discritisedValue:
+          type: integer
+          example: 1
+    ExecutionCombinedInfoResult:
+      type: object
+      properties:
+        algorihtm:
+          type: string
+          example: kolmogorov-smirnov
+        historicFeature:
+          type: array
+          items:
+            type: string
+          example: [feature1, feature2]
+        liveFeature:
+          type: array
+          items:
+            type: string
+          example: [feature1, feature2]
+        timestamp:
+          type: string
+          example: '2022-03-01T09:00:00Z'
+        rawValue:
+          type: string
+          example: 0.05
+        discritisedValue:
+          type: integer
+          example: 1
+
+
+
+
