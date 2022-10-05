@@ -2,7 +2,7 @@ package org.lowcomote.panoptes.orchestrator.api;
 
 public class CountableTrigger {
 	private String triggerType;
-	private String count;
+	private int count;
 	private String deployment;
 
 	public String getTriggerType() {
@@ -13,11 +13,11 @@ public class CountableTrigger {
 		this.triggerType = triggerType;
 	}
 
-	public String getCount() {
+	public int getCount() {
 		return count;
 	}
 
-	public void setCount(String count) {
+	public void setCount(int count) {
 		this.count = count;
 	}
 

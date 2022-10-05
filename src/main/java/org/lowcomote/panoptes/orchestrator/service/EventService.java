@@ -4,7 +4,6 @@ import org.lowcomote.panoptes.orchestrator.api.CountableTrigger;
 import org.lowcomote.panoptes.orchestrator.api.AlgorithmExecutionResult;
 import org.lowcomote.panoptes.orchestrator.repository.AlgorithmExecutionResultRepository;
 import org.lowcomote.panoptes.orchestrator.repository.StateMachineRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
@@ -18,12 +17,15 @@ import static io.cloudevents.core.CloudEventUtils.mapData;
 
 @Service
 public class EventService {
-	@Autowired
 	private StateMachineRepository stateMachineRepository;
-	@Autowired
 	private AlgorithmExecutionResultRepository algorithmExecutionResultRepository;
-	@Autowired
-	ObjectMapper objectMapper;
+	private ObjectMapper objectMapper;
+	
+	public EventService(StateMachineRepository stateMachineRepository, AlgorithmExecutionResultRepository algorithmExecutionResultRepository, ObjectMapper objectMapper) {
+		this.stateMachineRepository = stateMachineRepository;
+		this.algorithmExecutionResultRepository = algorithmExecutionResultRepository;
+		this.objectMapper = objectMapper;
+	}
 
 	public void ingestEvent(CloudEvent event) {
 		if (event.getType().equals("org.lowcomote.panoptes.baseAlgorithmExecution.result")) {
