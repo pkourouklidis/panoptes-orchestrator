@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.lowcomote.panoptes.orchestrator.repository.AlgorithmExecutionResultRepository;
 import org.lowcomote.panoptes.orchestrator.repository.StateMachineRepository;
 import org.mockito.Mock;
@@ -13,16 +14,21 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.test.StateMachineTestPlan;
 import org.springframework.statemachine.test.StateMachineTestPlanBuilder;
+import org.springframework.web.client.RestTemplate;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class PlatformServiceTest {
 	private PlatformService platformService;
 	@Mock
 	private AlgorithmExecutionResultRepository algorithmExecutionResultRepositoryrepository;
 	private StateMachineRepository stateMachineRepository = new StateMachineRepository();
+	@Mock
+	private RestTemplate restTemplate;
 	
 	@BeforeEach
-	void initService() {
-		platformService = new PlatformService(stateMachineRepository, algorithmExecutionResultRepositoryrepository);
+	void initService(){
+		platformService = new PlatformService(stateMachineRepository, algorithmExecutionResultRepositoryrepository, restTemplate);
 	}
 	
 	@Test
@@ -64,7 +70,7 @@ public class PlatformServiceTest {
         Message<String> m1 = MessageBuilder.withPayload("TRIGGER")
 				.setHeader("type", "sample").setHeader("count", 1).build();
         Message<String> m2 = MessageBuilder.withPayload("exec1-EXECUTIONRESULT")
-				.setHeader("level", 1).setHeader("rawResult", 0.015).build();
+				.setHeader("level", 1).setHeader("rawResult", "0.015").build();
 		StateMachineTestPlan<String, String> plan = 
 				StateMachineTestPlanBuilder.<String, String>builder()
 				.defaultAwaitTime(2)
@@ -77,13 +83,13 @@ public class PlatformServiceTest {
 					.sendEvent(m1)
 					.expectStates("IDLE")
 					.expectVariable("sample".concat(triggerGroupHash), 0)
-					.expectExtendedStateChanged(2)
-					.expectTransition(0)//since we stay at the same state it doesn't count as a transition
+					.expectExtendedStateChanged(3)
+					.expectTransition(1)
 					.and()
 				.step()
 					.sendEvent(m2)
 					.expectStates("IDLE")
-					.expectTransition(0)
+					.expectTransition(1)
 					.and()
 				.build();
 		plan.test();

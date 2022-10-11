@@ -2,12 +2,9 @@ package org.lowcomote.panoptes.orchestrator.service;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -21,10 +18,14 @@ import org.lowcomote.panoptes.orchestrator.api.BaseAlgorithmExecutionInfo;
 import org.lowcomote.panoptes.orchestrator.api.SingleBaseAlgorithmExecutionInfo;
 import org.lowcomote.panoptes.orchestrator.repository.AlgorithmExecutionResultRepository;
 import org.lowcomote.panoptes.orchestrator.repository.StateMachineRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.action.Action;
@@ -32,6 +33,7 @@ import org.springframework.statemachine.config.StateMachineBuilder;
 import org.springframework.statemachine.config.StateMachineBuilder.Builder;
 import org.springframework.statemachine.guard.Guard;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cloudevents.jackson.JsonFormat;
@@ -56,13 +58,19 @@ public class PlatformService {
 	private final ResourceSet resourceSet;
 	private final StateMachineRepository stateMachineRepository;
 	private final AlgorithmExecutionResultRepository algorithmExecutionResultRepository;
+	private Logger logger;
+	private String brokerURL;
+	private RestTemplate restTemplate;
 
-	public PlatformService(StateMachineRepository stateMachineRepository, AlgorithmExecutionResultRepository algorithmExecutionResultRepository) {
+	public PlatformService(StateMachineRepository stateMachineRepository, AlgorithmExecutionResultRepository algorithmExecutionResultRepository, RestTemplate restTemplate){
 		this.stateMachineRepository = stateMachineRepository;
 		this.algorithmExecutionResultRepository = algorithmExecutionResultRepository;
+		this.restTemplate = restTemplate;
 		this.resourceSet = new ResourceSetImpl();
 		resourceSet.getPackageRegistry().put(PanoptesDSLPackage.eNS_URI, PanoptesDSLPackage.eINSTANCE);
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
+		this.logger = LoggerFactory.getLogger(PlatformService.class);
+		this.brokerURL = "http://broker-ingress.knative-eventing.svc.cluster.local/panoptes/default";
 	}
 	
 	public Deployment getDeployment(String name) {
@@ -275,26 +283,21 @@ public class PlatformService {
 				ObjectMapper objectMapper = new ObjectMapper();
 				for (BaseAlgorithmExecution baseAlgorithmExecution : triggerGroup.getTargets()) {
 					try {
+						logger.info("Triggering algorithm execution: " + baseAlgorithmExecution.getName());
 						AlgorithmExecutionRequest requestObject = new AlgorithmExecutionRequest(baseAlgorithmExecution,
 								context.getExtendedState().get("lastTrigger".concat(triggerGroupHash), String.class));
-						CloudEvent event = CloudEventBuilder.v1()
+						CloudEvent event = CloudEventBuilder.v1().withId(UUID.randomUUID().toString())
 								.withType("org.lowcomote.panoptes.baseAlgorithmExecution.trigger")
 								.withSource(java.net.URI.create("panoptes.orchestrator"))
 								.withData(objectMapper.writeValueAsBytes(requestObject))
 								.withSubject(baseAlgorithmExecution.getAlgorithm().getRuntime().getName()).build();
-						URL url = new URL("http://broker-ingress.knative-eventing.svc.cluster.local/panoptes/default");
-						HttpURLConnection httpUrlConnection = (HttpURLConnection) url.openConnection();
-						httpUrlConnection.setRequestMethod("POST");
-						httpUrlConnection.setDoOutput(true);
-						httpUrlConnection.setDoInput(false);
-						HttpMessageWriter messageWriter = createMessageWriter(httpUrlConnection);
-						messageWriter.writeStructured(event, JsonFormat.CONTENT_TYPE);
-					} catch (IOException e) {
+						sendEvent(event);
+					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					context.getExtendedState().getVariables().put("lastTrigger".concat(triggerGroupHash),
-							java.time.Instant.now().toString());
 				}
+				context.getExtendedState().getVariables().put("lastTrigger".concat(triggerGroupHash),
+						java.time.Instant.now().toString());
 			}
 		};
 	}
@@ -303,55 +306,49 @@ public class PlatformService {
 		return new Action<String, String>() {
 			@Override
 			public void execute(StateContext<String, String> context) {
-				panoptesDSL.ActionExecution actionExecutionToTrigger=null;
-				int level =  (int)context.getMessageHeader("level");
-				String deployment = ((Deployment)execution.eContainer()).getName();
-				String rawResult = (String)context.getMessageHeader("rawResult");
-				String algorithmExecution = execution.getName();
-				for (actionExecutionEntry entry : execution.getActionExecutionMap()) {
-					if (entry.getKey()==level) {
-						actionExecutionToTrigger = entry.getValue();
-						break;
+				try {
+					panoptesDSL.ActionExecution actionExecutionToTrigger = null;
+					int level = (int) context.getMessageHeader("level");
+					String deployment = ((Deployment) execution.eContainer()).getName();
+					String rawResult = (String) context.getMessageHeader("rawResult");
+					String algorithmExecution = execution.getName();
+					for (actionExecutionEntry entry : execution.getActionExecutionMap()) {
+						if (entry.getKey() == level) {
+							actionExecutionToTrigger = entry.getValue();
+							break;
+						}
 					}
-				}
-				if (actionExecutionToTrigger!=null) {
-					ActionExecutionRequest requestObject = new ActionExecutionRequest(actionExecutionToTrigger, deployment, algorithmExecution, level, rawResult );
-					ObjectMapper objectMapper = new ObjectMapper();
-					try {
+					if (actionExecutionToTrigger != null) {
+						logger.info("Triggering action execution: " + actionExecutionToTrigger.getName());
+						ActionExecutionRequest requestObject = new ActionExecutionRequest(actionExecutionToTrigger,
+								deployment, algorithmExecution, level, rawResult);
+						ObjectMapper objectMapper = new ObjectMapper();
 						CloudEvent event = CloudEventBuilder.v1()
+								.withId(UUID.randomUUID().toString())
 								.withType("org.lowcomote.panoptes.actionExecution.trigger")
 								.withSource(java.net.URI.create("panoptes.orchestrator"))
 								.withData(objectMapper.writeValueAsBytes(requestObject))
 								.withSubject(actionExecutionToTrigger.getAction().getName()).build();
-						URL url = new URL("http://broker-ingress.knative-eventing.svc.cluster.local/panoptes/default");
-						HttpURLConnection httpUrlConnection = (HttpURLConnection) url.openConnection();
-						httpUrlConnection.setRequestMethod("POST");
-						httpUrlConnection.setDoOutput(true);
-						httpUrlConnection.setDoInput(false);
-						HttpMessageWriter messageWriter = createMessageWriter(httpUrlConnection);
-						messageWriter.writeStructured(event, JsonFormat.CONTENT_TYPE);
-					} catch (IOException e) {
-						e.printStackTrace();
+						sendEvent(event);
 					}
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 		};
 	}
 	
-	private HttpMessageWriter createMessageWriter(HttpURLConnection httpUrlConnection) {
-		return HttpMessageFactory.createWriter(httpUrlConnection::setRequestProperty, body -> {
-			try {
-				if (body != null) {
-					httpUrlConnection.setRequestProperty("content-length", String.valueOf(body.length));
-					try (OutputStream outputStream = httpUrlConnection.getOutputStream()) {
-						outputStream.write(body);
-					}
-				} else {
-					httpUrlConnection.setRequestProperty("content-length", "0");
-				}
-			} catch (IOException t) {
-				throw new UncheckedIOException(t);
-			}
+	private void sendEvent(CloudEvent event) throws IOException {
+		HttpHeaders headers = new HttpHeaders();
+		HttpMessageWriter messageWriter = createMessageWriter(headers);
+		messageWriter.writeStructured(event, JsonFormat.CONTENT_TYPE);
+	}
+	
+	private HttpMessageWriter createMessageWriter(HttpHeaders headers) {
+		return HttpMessageFactory.createWriter(headers::set, body -> {
+			HttpEntity<byte[]> request = 
+				      new HttpEntity<byte[]>(body, headers);
+			restTemplate.postForObject(brokerURL, request, String.class);
 		});
 	}
 }

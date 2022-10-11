@@ -19,7 +19,7 @@
     <features xmi:id="_fAg7YOZMEeyqS7IBYz-byQ" name="f1"/>
     <labels xmi:id="_-Oq68DQ0Ee25aJhTaMbBMw" name="l1" type="categorical"/>
   </featureStore>
-  <actions xmi:id="_It0TcPa1Eeykad7bAjwi4A" name="action1"/>
+  <actions xmi:id="_It0TcPa1Eeykad7bAjwi4A" name="emailAction"/>
   <mlModels xmi:id="_cQ5TcOZMEeyqS7IBYz-byQ" name="m1" inputs="_fAg7YOZMEeyqS7IBYz-byQ">
     <output xmi:id="_3EjlUOcfEeyqS7IBYz-byQ" name="p1" label="_-Oq68DQ0Ee25aJhTaMbBMw"/>
   </mlModels>
