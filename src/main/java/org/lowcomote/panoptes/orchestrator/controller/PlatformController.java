@@ -55,7 +55,7 @@ public class PlatformController {
 	public BaseAlgorithmExecutionInfo getSpecificExecutionResults(@PathVariable String deploymentName,
 			@PathVariable String executionType, @PathVariable String executionName,
 			@RequestParam(required = false) Integer count) {
-		if (count == null) {
+		if (count == null || count <= 0) {
 			count = 1;
 		}
 		BaseAlgorithmExecutionInfo response = platformService.getSpecificExecutionResults(deploymentName, executionName,
@@ -69,7 +69,7 @@ public class PlatformController {
 	@GetMapping(value = "/api/v1/deployments/{deploymentName}/{executionType}", produces = "application/json")
 	public List<SingleBaseAlgorithmExecutionInfo> getSpecificExecutionResults(@PathVariable String deploymentName,
 			@PathVariable String executionType,@RequestParam(required = false) Integer count) {
-		if (count == null) {
+		if (count == null || count <= 0) {
 			count = 1;
 		}
 		List<SingleBaseAlgorithmExecutionInfo> response = platformService.getExecutionResultsByType(deploymentName,
