@@ -62,10 +62,10 @@ public class PlatformService {
 	private String brokerURL;
 	private RestTemplate restTemplate;
 
-	public PlatformService(StateMachineRepository stateMachineRepository, AlgorithmExecutionResultRepository algorithmExecutionResultRepository, RestTemplate restTemplate){
+	public PlatformService(StateMachineRepository stateMachineRepository, AlgorithmExecutionResultRepository algorithmExecutionResultRepository){
 		this.stateMachineRepository = stateMachineRepository;
 		this.algorithmExecutionResultRepository = algorithmExecutionResultRepository;
-		this.restTemplate = restTemplate;
+		this.restTemplate = new RestTemplate();
 		this.resourceSet = new ResourceSetImpl();
 		resourceSet.getPackageRegistry().put(PanoptesDSLPackage.eNS_URI, PanoptesDSLPackage.eINSTANCE);
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());

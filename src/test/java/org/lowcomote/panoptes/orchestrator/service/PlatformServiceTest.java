@@ -28,7 +28,7 @@ public class PlatformServiceTest {
 	
 	@BeforeEach
 	void initService(){
-		platformService = new PlatformService(stateMachineRepository, algorithmExecutionResultRepositoryrepository, restTemplate);
+		platformService = new PlatformService(stateMachineRepository, algorithmExecutionResultRepositoryrepository);
 	}
 	
 	@Test
