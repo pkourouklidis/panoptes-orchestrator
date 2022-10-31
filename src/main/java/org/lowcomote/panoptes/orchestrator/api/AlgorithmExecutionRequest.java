@@ -12,9 +12,10 @@ public class AlgorithmExecutionRequest {
 	private String liveFeatures;
 	private String baseAlgorithmExecutionName;
 	private String startDate;
+	private String endDate;
 	private String algorithmName;
 
-	public AlgorithmExecutionRequest(BaseAlgorithmExecution baseAlgorithmExecution, String lastTrigger) {
+	public AlgorithmExecutionRequest(BaseAlgorithmExecution baseAlgorithmExecution, String startDate, String endDate) {
 		this.modelName = ((Deployment) baseAlgorithmExecution.eContainer()).getMlModel().getName();
 		this.deploymentName = ((Deployment) baseAlgorithmExecution.eContainer()).getName();
 		this.historicalFeatures = String.join(",", baseAlgorithmExecution.getHistoricIOValues().stream()
@@ -22,7 +23,8 @@ public class AlgorithmExecutionRequest {
 		this.liveFeatures = String.join(",", baseAlgorithmExecution.getCurrentIOValues().stream()
 				.map(io -> io.getName()).collect(Collectors.toList()));
 		this.baseAlgorithmExecutionName = baseAlgorithmExecution.getName();
-		this.startDate = lastTrigger;
+		this.startDate = startDate;
+		this.endDate = endDate;
 		this.algorithmName = baseAlgorithmExecution.getAlgorithm().getName();
 	}
 
@@ -72,6 +74,14 @@ public class AlgorithmExecutionRequest {
 
 	public void setStartDate(String startDate) {
 		this.startDate = startDate;
+	}
+
+	public String getEndDate() {
+		return endDate;
+	}
+
+	public void setEndDate(String endDate) {
+		this.endDate = endDate;
 	}
 
 	public String getAlgorithmName() {

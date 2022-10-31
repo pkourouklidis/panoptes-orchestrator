@@ -281,11 +281,12 @@ public class PlatformService {
 			@Override
 			public void execute(StateContext<String, String> context) {
 				ObjectMapper objectMapper = new ObjectMapper();
+				String now = java.time.Instant.now().toString();
 				for (BaseAlgorithmExecution baseAlgorithmExecution : triggerGroup.getTargets()) {
 					try {
 						logger.info("Triggering algorithm execution: " + baseAlgorithmExecution.getName());
 						AlgorithmExecutionRequest requestObject = new AlgorithmExecutionRequest(baseAlgorithmExecution,
-								context.getExtendedState().get("lastTrigger".concat(triggerGroupHash), String.class));
+								context.getExtendedState().get("lastTrigger".concat(triggerGroupHash), String.class), now);
 						CloudEvent event = CloudEventBuilder.v1().withId(UUID.randomUUID().toString())
 								.withType("org.lowcomote.panoptes.baseAlgorithmExecution.trigger")
 								.withSource(java.net.URI.create("panoptes.orchestrator"))
@@ -296,8 +297,7 @@ public class PlatformService {
 						e.printStackTrace();
 					}
 				}
-				context.getExtendedState().getVariables().put("lastTrigger".concat(triggerGroupHash),
-						java.time.Instant.now().toString());
+				context.getExtendedState().getVariables().put("lastTrigger".concat(triggerGroupHash), now);
 			}
 		};
 	}
