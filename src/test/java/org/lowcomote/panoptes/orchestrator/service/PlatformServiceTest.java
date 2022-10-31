@@ -1,7 +1,6 @@
 package org.lowcomote.panoptes.orchestrator.service;
 
 import static org.junit.jupiter.api.Assertions.*;
-
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,17 +13,18 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.test.StateMachineTestPlan;
 import org.springframework.statemachine.test.StateMachineTestPlanBuilder;
-import org.springframework.web.client.RestTemplate;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
+@WireMockTest(proxyMode = true)
 public class PlatformServiceTest {
 	private PlatformService platformService;
 	@Mock
 	private AlgorithmExecutionResultRepository algorithmExecutionResultRepositoryrepository;
 	private StateMachineRepository stateMachineRepository = new StateMachineRepository();
-	@Mock
-	private RestTemplate restTemplate;
 	
 	@BeforeEach
 	void initService(){
@@ -65,8 +65,11 @@ public class PlatformServiceTest {
         InputStream inputStream = classLoader.getResourceAsStream("completeDeployment.xmi");
         String platformXMI = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         platformService.updatePlatform(platformXMI);
-        String triggerGroupHash = String.valueOf( platformService.getDeployment("d2").getTriggerGroups().get(0).hashCode());
-       
+        String triggerGroupHash = String.valueOf( platformService.getDeployment("d2").getTriggerGroups().get(0).hashCode());        
+        
+        stubFor(post("/panoptes/default")
+        		.willReturn(ok()));
+
         Message<String> m1 = MessageBuilder.withPayload("TRIGGER")
 				.setHeader("type", "sample").setHeader("count", 1).build();
         Message<String> m2 = MessageBuilder.withPayload("exec1-EXECUTIONRESULT")
