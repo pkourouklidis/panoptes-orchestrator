@@ -5,10 +5,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.lowcomote.panoptes.orchestrator.repository.AlgorithmExecutionResultRepository;
 import org.lowcomote.panoptes.orchestrator.repository.StateMachineRepository;
-import org.mockito.Mock;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.test.StateMachineTestPlan;
@@ -16,19 +13,14 @@ import org.springframework.statemachine.test.StateMachineTestPlanBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
-import org.mockito.junit.jupiter.MockitoExtension;
-
-@ExtendWith(MockitoExtension.class)
 @WireMockTest(proxyMode = true)
 public class PlatformServiceTest {
 	private PlatformService platformService;
-	@Mock
-	private AlgorithmExecutionResultRepository algorithmExecutionResultRepositoryrepository;
 	private StateMachineRepository stateMachineRepository = new StateMachineRepository();
 	
 	@BeforeEach
 	void initService(){
-		platformService = new PlatformService(stateMachineRepository, algorithmExecutionResultRepositoryrepository);
+		platformService = new PlatformService(stateMachineRepository, null);
 	}
 	
 	@Test
