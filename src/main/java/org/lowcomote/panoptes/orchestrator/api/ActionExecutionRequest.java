@@ -12,8 +12,11 @@ public class ActionExecutionRequest {
 	private String algorithmExecution;
 	private int level;
 	private String rawResult;
-	
-	public ActionExecutionRequest(ActionExecution actionExecution, String deployment, String algorithmExecution, int level, String rawResult) {
+	private String startDate;
+	private String endDate;
+
+	public ActionExecutionRequest(ActionExecution actionExecution, String deployment, String algorithmExecution,
+			int level, String rawResult, String startDate, String endDate) {
 		this.parameters = new HashMap<String, String>();
 		for (parameterValueEntry entry : actionExecution.getParameterValueMap()) {
 			parameters.put(entry.getKey(), entry.getValue());
@@ -22,8 +25,10 @@ public class ActionExecutionRequest {
 		this.algorithmExecution = algorithmExecution;
 		this.level = level;
 		this.rawResult = rawResult;
+		this.startDate = startDate;
+		this.endDate = endDate;
 	}
-	
+
 	public Map<String, String> getParameters() {
 		return parameters;
 	}
@@ -62,5 +67,21 @@ public class ActionExecutionRequest {
 
 	public void setRawResult(String rawResult) {
 		this.rawResult = rawResult;
+	}
+
+	public String getStartDate() {
+		return startDate;
+	}
+
+	public void setStartDate(String startDate) {
+		this.startDate = startDate;
+	}
+
+	public String getEndDate() {
+		return endDate;
+	}
+
+	public void setEndDate(String endDate) {
+		this.endDate = endDate;
 	}
 }

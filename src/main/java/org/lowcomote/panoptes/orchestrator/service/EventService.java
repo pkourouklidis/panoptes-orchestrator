@@ -46,7 +46,9 @@ public class EventService {
 	private void ingestAlgorithmExecutionResult(AlgorithmExecutionResult executionResult) {
 		StateMachine<String, String> sm = stateMachineRepository.getMachine(executionResult.getDeployment());
 		Message<String> m = MessageBuilder.withPayload(executionResult.getAlgorithmExecution().concat("-EXECUTIONRESULT"))
-				.setHeader("level", executionResult.getLevel()).setHeader("rawResult", executionResult.getRawResult()).build();
+				.setHeader("level", executionResult.getLevel()).setHeader("rawResult", executionResult.getRawResult())
+				.setHeader("startDate", executionResult.getStartDate().toInstant().toString())
+				.setHeader("endDate", executionResult.getEndDate().toInstant().toString()).build();
 		sm.sendEvent(m);
 	}
 	

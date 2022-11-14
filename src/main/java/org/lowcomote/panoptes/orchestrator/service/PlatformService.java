@@ -128,7 +128,7 @@ public class PlatformService {
 		Deployment deployment = getDeployment(deploymentName);
 		if (deployment != null) {
 			if (executionType.equals("baseAlgorithmExecutions")){
-				Pageable pageable = PageRequest.of(0, count, Sort.by(Sort.Direction.DESC, "date"));
+				Pageable pageable = PageRequest.of(0, count, Sort.by(Sort.Direction.DESC, "endDate"));
 				List<AlgorithmExecutionResult> results = algorithmExecutionResultRepository.findByDeploymentAndExecutionType(deploymentName, "baseAlgorithmExecution", pageable);
 				List<SingleBaseAlgorithmExecutionInfo> finalResult = new ArrayList<SingleBaseAlgorithmExecutionInfo>();
 				for (AlgorithmExecutionResult result : results) {
@@ -311,6 +311,8 @@ public class PlatformService {
 					int level = (int) context.getMessageHeader("level");
 					String deployment = ((Deployment) execution.eContainer()).getName();
 					String rawResult = (String) context.getMessageHeader("rawResult");
+					String startDate = (String) context.getMessageHeader("startDate");
+					String endDate = (String) context.getMessageHeader("endDate");
 					String algorithmExecution = execution.getName();
 					for (actionExecutionEntry entry : execution.getActionExecutionMap()) {
 						if (entry.getKey() == level) {
@@ -321,7 +323,7 @@ public class PlatformService {
 					if (actionExecutionToTrigger != null) {
 						logger.info("Triggering action execution: " + actionExecutionToTrigger.getName());
 						ActionExecutionRequest requestObject = new ActionExecutionRequest(actionExecutionToTrigger,
-								deployment, algorithmExecution, level, rawResult);
+								deployment, algorithmExecution, level, rawResult, startDate, endDate);
 						ObjectMapper objectMapper = new ObjectMapper();
 						CloudEvent event = CloudEventBuilder.v1()
 								.withId(UUID.randomUUID().toString())

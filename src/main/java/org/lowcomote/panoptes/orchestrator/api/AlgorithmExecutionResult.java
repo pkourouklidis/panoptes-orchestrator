@@ -15,7 +15,8 @@ public class AlgorithmExecutionResult {
 	private String algorithmExecution;
 	private int level;
 	private String rawResult;
-	private Date date;
+	private Date startDate;
+	private Date endDate;
 	private String executionType;
 
 	public String getDeployment() {
@@ -50,12 +51,20 @@ public class AlgorithmExecutionResult {
 		this.rawResult = rawResult;
 	}
 
-	public Date getDate() {
-		return date;
+	public Date getStartDate() {
+		return startDate;
 	}
 
-	public void setDate(Date date) {
-		this.date = date;
+	public void setStartDate(Date startdate) {
+		this.startDate = startdate;
+	}
+
+	public Date getEndDate() {
+		return endDate;
+	}
+
+	public void setEndDate(Date endDate) {
+		this.endDate = endDate;
 	}
 
 	public String getExecutionType() {

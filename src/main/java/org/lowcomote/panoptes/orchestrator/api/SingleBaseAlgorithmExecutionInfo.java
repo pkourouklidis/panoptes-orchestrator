@@ -17,7 +17,7 @@ public class SingleBaseAlgorithmExecutionInfo {
 	
 	public SingleBaseAlgorithmExecutionInfo(BaseAlgorithmExecution execution, AlgorithmExecutionResult result) {
 		this.algorithm = execution.getAlgorithm().getName();
-		this.timestamp = result.getDate();
+		this.timestamp = result.getEndDate();
 		this.rawValue = result.getRawResult();
 		this.level = result.getLevel();
 		for(ModelIO io : execution.getHistoricIOValues()) {

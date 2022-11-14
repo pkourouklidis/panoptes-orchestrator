@@ -27,9 +27,9 @@ public class AlgorirhmExecutionResultRepositoryTest {
 		AlgorithmExecutionResult result = new AlgorithmExecutionResult();
 		result.setDeployment("testDeployment");
 		result.setAlgorithmExecution("testAlgorithmExecution");
-		result.setDate(Date.from(java.time.Instant.now()));
+		result.setEndDate(Date.from(java.time.Instant.now()));
 		repository.save(result);
-		Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "date"));
+		Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "endDate"));
 		List<AlgorithmExecutionResult> results = repository.findByDeploymentAndAlgorithmExecution("testDeployment", "testAlgorithmExecution", pageable);
 		assertTrue(results.size() == 1);
 		assertTrue(results.get(0).getAlgorithmExecution().equals("testAlgorithmExecution"));
@@ -41,9 +41,9 @@ public class AlgorirhmExecutionResultRepositoryTest {
 		result.setDeployment("testDeployment");
 		result.setAlgorithmExecution("testAlgorithmExecution");
 		result.setExecutionType("baseAlgorithmExecution");
-		result.setDate(Date.from(java.time.Instant.now()));
+		result.setEndDate(Date.from(java.time.Instant.now()));
 		repository.save(result);
-		Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "date"));
+		Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "endDate"));
 		List<AlgorithmExecutionResult> results = repository.findByDeploymentAndExecutionType("testDeployment", "baseAlgorithmExecution", pageable);
 		assertTrue(results.size() == 1);
 		assertTrue(results.get(0).getAlgorithmExecution().equals("testAlgorithmExecution"));
@@ -56,22 +56,22 @@ public class AlgorirhmExecutionResultRepositoryTest {
 		oldResult.setLevel(0);
 		oldResult.setDeployment("testDeployment");
 		oldResult.setAlgorithmExecution("testAlgorithmExecution");
-		oldResult.setDate(df.parse("2022-01-01T00:00:00"));
+		oldResult.setEndDate(df.parse("2022-01-01T00:00:00"));
 		repository.save(oldResult);
 		
 		AlgorithmExecutionResult newResult = new AlgorithmExecutionResult();
 		newResult.setLevel(1);
 		newResult.setDeployment("testDeployment");
 		newResult.setAlgorithmExecution("testAlgorithmExecution");
-		newResult.setDate(df.parse("2022-01-02T00:00:00"));
+		newResult.setEndDate(df.parse("2022-01-02T00:00:00"));
 		repository.save(newResult);
 		
-		Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "date"));
+		Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "endDate"));
 		List<AlgorithmExecutionResult> results = repository.findByDeploymentAndAlgorithmExecution("testDeployment", "testAlgorithmExecution", pageable);
 		assertTrue(results.size() == 1);
 		assertTrue(results.get(0).getLevel() == 1);//newest result retrieved
 		
-		pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "date"));
+		pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "endDate"));
 		results = repository.findByDeploymentAndAlgorithmExecution("testDeployment", "testAlgorithmExecution", pageable);
 		assertTrue(results.size() == 2);
 		assertTrue(results.get(0).getLevel() == 1);//newest result retrieved first
