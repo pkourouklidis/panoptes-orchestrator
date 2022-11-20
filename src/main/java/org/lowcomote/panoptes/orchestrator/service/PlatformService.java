@@ -119,7 +119,7 @@ public class PlatformService {
 	}
 	
 	public BaseAlgorithmExecutionInfo getSpecificBaseAlgorihtmExecutionResults(Deployment deployment, BaseAlgorithmExecution algorithmExecution, Integer count){
-		Pageable pageable = PageRequest.of(0, count, Sort.by(Sort.Direction.DESC, "date"));
+		Pageable pageable = PageRequest.of(0, count, Sort.by(Sort.Direction.DESC, "endDate"));
 		List<AlgorithmExecutionResult> results = algorithmExecutionResultRepository.findByDeploymentAndAlgorithmExecution(deployment.getName(), algorithmExecution.getName(), pageable);
 		return new BaseAlgorithmExecutionInfo(algorithmExecution, results);
 	}

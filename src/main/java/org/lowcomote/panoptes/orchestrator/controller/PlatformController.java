@@ -67,7 +67,7 @@ public class PlatformController {
 	}
 	
 	@GetMapping(value = "/api/v1/deployments/{deploymentName}/{executionType}", produces = "application/json")
-	public List<SingleBaseAlgorithmExecutionInfo> getSpecificExecutionResults(@PathVariable String deploymentName,
+	public List<SingleBaseAlgorithmExecutionInfo> getExecutionTypeResults(@PathVariable String deploymentName,
 			@PathVariable String executionType,@RequestParam(required = false) Integer count) {
 		if (count == null || count <= 0) {
 			count = 1;
