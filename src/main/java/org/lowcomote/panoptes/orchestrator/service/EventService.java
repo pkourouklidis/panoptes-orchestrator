@@ -35,7 +35,9 @@ public class EventService {
 			ingestAlgorithmExecutionResult(executionResult);
 			algorithmExecutionResultRepository.save(executionResult);
 		}
-		else if (event.getType().equals("org.lowcomote.panoptes.trigger.sample") || event.getType().equals("org.lowcomote.panoptes.trigger.label")) {
+		else if (event.getType().equals("org.lowcomote.panoptes.trigger.sample")
+				|| event.getType().equals("org.lowcomote.panoptes.trigger.label")
+				|| event.getType().equals("org.lowcomote.panoptes.trigger.prediction")) {
 			CountableTrigger trigger = mapData(event,
 					PojoCloudEventDataMapper.from(objectMapper, CountableTrigger.class)).getValue();
 			ingestCountableTrigger(trigger);
