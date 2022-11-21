@@ -1,9 +1,12 @@
 package org.lowcomote.panoptes.orchestrator.api;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import panoptesDSL.BaseAlgorithmExecution;
 import panoptesDSL.Deployment;
+import panoptesDSL.parameterValueEntry;
 
 public class AlgorithmExecutionRequest {
 	private String modelName;
@@ -14,6 +17,7 @@ public class AlgorithmExecutionRequest {
 	private String startDate;
 	private String endDate;
 	private String algorithmName;
+	private Map<String, String> parameters;
 
 	public AlgorithmExecutionRequest(BaseAlgorithmExecution baseAlgorithmExecution, String startDate, String endDate) {
 		this.modelName = ((Deployment) baseAlgorithmExecution.eContainer()).getMlModel().getName();
@@ -26,6 +30,10 @@ public class AlgorithmExecutionRequest {
 		this.startDate = startDate;
 		this.endDate = endDate;
 		this.algorithmName = baseAlgorithmExecution.getAlgorithm().getName();
+		this.parameters = new HashMap<String, String>();
+		for (parameterValueEntry entry : baseAlgorithmExecution.getParameterValueMap()) {
+			parameters.put(entry.getKey(), entry.getValue());
+		}
 	}
 
 	public String getModelName() {
@@ -90,5 +98,13 @@ public class AlgorithmExecutionRequest {
 
 	public void setAlgorithmName(String algorithmName) {
 		this.algorithmName = algorithmName;
+	}
+
+	public Map<String, String> getParameters() {
+		return parameters;
+	}
+
+	public void setParameters(Map<String, String> parameters) {
+		this.parameters = parameters;
 	}
 }
