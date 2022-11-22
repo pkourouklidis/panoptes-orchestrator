@@ -148,7 +148,7 @@ public class PlatformService {
 		return null;
 	}
 	
-	public void updatePlatform(String platformXMI) throws Exception {
+	synchronized public void updatePlatform(String platformXMI) throws Exception {
 		Platform newPlatform = parsePlatform(platformXMI);
 		stateMachineRepository.clear();
 		for (Deployment d : newPlatform.getDeployments()) {
@@ -194,19 +194,19 @@ public class PlatformService {
 		StateMachine<String, String> sm = builder.build();
 		// Initialise individual triggergroup states
 		for (TriggerGroup triggerGroup : deployment.getTriggerGroups()) {
-			String triggerGroupHash = String.valueOf(triggerGroup.hashCode());
-			sm.getExtendedState().getVariables().put("sample".concat(triggerGroupHash), 0);
-			sm.getExtendedState().getVariables().put("prediction".concat(triggerGroupHash), 0);
-			sm.getExtendedState().getVariables().put("label".concat(triggerGroupHash), 0);
-			sm.getExtendedState().getVariables().put("timer".concat(triggerGroupHash), false);
-			sm.getExtendedState().getVariables().put("lastTrigger".concat(triggerGroupHash),
+			String triggerGroupName = triggerGroup.getName();
+			sm.getExtendedState().getVariables().put("sample".concat(triggerGroupName), 0);
+			sm.getExtendedState().getVariables().put("prediction".concat(triggerGroupName), 0);
+			sm.getExtendedState().getVariables().put("label".concat(triggerGroupName), 0);
+			sm.getExtendedState().getVariables().put("timer".concat(triggerGroupName), false);
+			sm.getExtendedState().getVariables().put("lastTrigger".concat(triggerGroupName),
 				java.time.Instant.now().toString());
 		}
 		return sm;
 	}
 
 	private Guard<String, String> buildGuard(TriggerGroup triggerGroup) {
-		final String triggerGroupHash = String.valueOf(triggerGroup.hashCode());
+		final String triggerGroupName = triggerGroup.getName();
 		return new Guard<String, String>() {
 			@Override
 			synchronized public boolean evaluate(StateContext<String, String> context) {
@@ -215,68 +215,68 @@ public class PlatformService {
 				switch ((String) context.getMessage().getHeaders().get("type")) {
 				case "sample":
 					count = (int) context.getMessage().getHeaders().get("count");
-					context.getExtendedState().getVariables().put("sample".concat(triggerGroupHash), (int) context
-							.getExtendedState().getVariables().get("sample".concat(triggerGroupHash)) + count);
+					context.getExtendedState().getVariables().put("sample".concat(triggerGroupName), (int) context
+							.getExtendedState().getVariables().get("sample".concat(triggerGroupName)) + count);
 					break;
 				case "prediction":
 					count = (int) context.getMessage().getHeaders().get("count");
-					context.getExtendedState().getVariables().put("prediction".concat(triggerGroupHash),
+					context.getExtendedState().getVariables().put("prediction".concat(triggerGroupName),
 							(int) context.getExtendedState().getVariables()
-									.get("prediction".concat(triggerGroupHash)) + count);
+									.get("prediction".concat(triggerGroupName)) + count);
 					break;
 				case "label":
 					count = (int) context.getMessage().getHeaders().get("count");
-					context.getExtendedState().getVariables().put("label".concat(triggerGroupHash), (int) context
-							.getExtendedState().getVariables().get("label".concat(triggerGroupHash)) + count);
+					context.getExtendedState().getVariables().put("label".concat(triggerGroupName), (int) context
+							.getExtendedState().getVariables().get("label".concat(triggerGroupName)) + count);
 					break;
 				case "timer":
-					context.getExtendedState().getVariables().put("timer".concat(triggerGroupHash), true);
+					context.getExtendedState().getVariables().put("timer".concat(triggerGroupName), true);
 					break;
 				}
 
 				for (CompositeTrigger compositeTrigger : triggerGroup.getCompositeTriggers()) {
-
+					//Within individual CompositeTriggers, even if one of the simple triggers is not satisfied, we cannot trigger 
 					if (compositeTrigger.getTt() != null) {
 						if ((boolean) context.getExtendedState().getVariables()
-								.get("timer".concat(triggerGroupHash)) == false) {
+								.get("timer".concat(triggerGroupName)) == false) {
 							return false;
 						}
 					}
 
 					if (compositeTrigger.getSt() != null) {
 						if ((int) context.getExtendedState().getVariables()
-								.get("sample".concat(triggerGroupHash)) < compositeTrigger.getSt().getFrequency()) {
+								.get("sample".concat(triggerGroupName)) < compositeTrigger.getSt().getFrequency()) {
 							return false;
 						}
 					}
 
 					if (compositeTrigger.getPt() != null) {
 						if ((int) context.getExtendedState().getVariables().get(
-								"prediction".concat(triggerGroupHash)) < compositeTrigger.getPt().getFrequency()) {
+								"prediction".concat(triggerGroupName)) < compositeTrigger.getPt().getFrequency()) {
 							return false;
 						}
 					}
 
 					if (compositeTrigger.getLt() != null) {
 						if ((int) context.getExtendedState().getVariables()
-								.get("label".concat(triggerGroupHash)) < compositeTrigger.getLt().getFrequency()) {
+								.get("label".concat(triggerGroupName)) < compositeTrigger.getLt().getFrequency()) {
 							return false;
 						}
 					}
 				}
 
 				// reset counters
-				context.getExtendedState().getVariables().put("sample".concat(triggerGroupHash), 0);
-				context.getExtendedState().getVariables().put("prediction".concat(triggerGroupHash), 0);
-				context.getExtendedState().getVariables().put("label".concat(triggerGroupHash), 0);
-				context.getExtendedState().getVariables().put("timer".concat(triggerGroupHash), false);
+				context.getExtendedState().getVariables().put("sample".concat(triggerGroupName), 0);
+				context.getExtendedState().getVariables().put("prediction".concat(triggerGroupName), 0);
+				context.getExtendedState().getVariables().put("label".concat(triggerGroupName), 0);
+				context.getExtendedState().getVariables().put("timer".concat(triggerGroupName), false);
 				return true;
 			}
 		};
 	}
 
 	private Action<String, String> buildAlgorithmExecutionTrigger(TriggerGroup triggerGroup) {
-		final String triggerGroupHash = String.valueOf(triggerGroup.hashCode());
+		final String triggerGroupName = triggerGroup.getName();
 		return new Action<String, String>() {
 			@Override
 			public void execute(StateContext<String, String> context) {
@@ -286,7 +286,7 @@ public class PlatformService {
 					try {
 						logger.info("Triggering algorithm execution: " + baseAlgorithmExecution.getName());
 						AlgorithmExecutionRequest requestObject = new AlgorithmExecutionRequest(baseAlgorithmExecution,
-								context.getExtendedState().get("lastTrigger".concat(triggerGroupHash), String.class), now);
+								context.getExtendedState().get("lastTrigger".concat(triggerGroupName), String.class), now);
 						CloudEvent event = CloudEventBuilder.v1().withId(UUID.randomUUID().toString())
 								.withType("org.lowcomote.panoptes.baseAlgorithmExecution.trigger")
 								.withSource(java.net.URI.create("panoptes.orchestrator"))
@@ -297,7 +297,7 @@ public class PlatformService {
 						e.printStackTrace();
 					}
 				}
-				context.getExtendedState().getVariables().put("lastTrigger".concat(triggerGroupHash), now);
+				context.getExtendedState().getVariables().put("lastTrigger".concat(triggerGroupName), now);
 			}
 		};
 	}

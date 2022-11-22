@@ -57,7 +57,7 @@ public class PlatformServiceTest {
         InputStream inputStream = classLoader.getResourceAsStream("completeDeployment.xmi");
         String platformXMI = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         platformService.updatePlatform(platformXMI);
-        String triggerGroupHash = String.valueOf( platformService.getDeployment("d2").getTriggerGroups().get(0).hashCode());        
+        String triggerGroupName = platformService.getDeployment("d2").getTriggerGroups().get(0).getName();        
         
         stubFor(post("/panoptes/default")
         		.willReturn(ok()));
@@ -72,12 +72,12 @@ public class PlatformServiceTest {
 				.stateMachine(stateMachineRepository.getMachine("d2"))
 				.step()
 					.expectState("IDLE")
-					.expectVariable("sample".concat(triggerGroupHash), 0)
+					.expectVariable("sample".concat(triggerGroupName), 0)
 					.and()
 				.step()
 					.sendEvent(m1)
 					.expectStates("IDLE")
-					.expectVariable("sample".concat(triggerGroupHash), 0)
+					.expectVariable("sample".concat(triggerGroupName), 0)
 					.expectExtendedStateChanged(3)
 					.expectTransition(1)
 					.and()
@@ -88,5 +88,10 @@ public class PlatformServiceTest {
 					.and()
 				.build();
 		plan.test();
+	}
+	
+	@Test
+	void checkTriggerStateUpdate() {
+		
 	}
 }
