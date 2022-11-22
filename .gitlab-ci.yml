@@ -11,6 +11,6 @@ build:
   image: maven:3.8-amazoncorretto-17
   stage: build
   script:
-    - mvn clean compile package com.google.cloud.tools:jib-maven-plugin:3.2.1:build -Dimage=registry.docker.nat.bt.com/$DOCKER_PROJECT_NAME/$PROJECT_NAME:latest -Djib.to.auth.username=$PANOPTES_IMAGE_REGISTRY_USER -Djib.to.auth.password=$PANOPTES_IMAGE_REGISTRY_PASSWORD -Djib.allowInsecureRegistries=true -Djib.from.image=gcr.io/distroless/java11-debian11
+    - mvn clean compile package com.google.cloud.tools:jib-maven-plugin:3.3.1:build -Dimage=registry.docker.nat.bt.com/$DOCKER_PROJECT_NAME/$PROJECT_NAME:latest -Djib.to.auth.username=$PANOPTES_IMAGE_REGISTRY_USER -Djib.to.auth.password=$PANOPTES_IMAGE_REGISTRY_PASSWORD -Djib.allowInsecureRegistries=true -Djib.from.image=gcr.io/distroless/java11-debian11
   only:
   - master
