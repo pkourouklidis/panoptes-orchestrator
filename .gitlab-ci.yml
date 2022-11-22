@@ -4,6 +4,10 @@ variables:
   PROJECT_NAME: "orchestrator"
   DOCKER_PROJECT_NAME: "panoptes"
 
+cache:
+  paths:
+    - .m2/repository
+
 stages:
   - build
 
