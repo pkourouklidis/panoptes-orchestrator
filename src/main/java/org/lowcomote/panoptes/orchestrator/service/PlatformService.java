@@ -274,45 +274,54 @@ public class PlatformService {
 					context.getExtendedState().getVariables().put("timer".concat(triggerGroupName), true);
 					break;
 				}
-
+				
+				boolean trigger = false;
 				for (CompositeTrigger compositeTrigger : triggerGroup.getCompositeTriggers()) {
 					// Within individual CompositeTriggers, even if one of the simple triggers is
 					// not satisfied, we cannot trigger
 					if (compositeTrigger.getTt() != null) {
 						if ((boolean) context.getExtendedState().getVariables()
 								.get("timer".concat(triggerGroupName)) == false) {
-							return false;
+							continue;
 						}
 					}
 
 					if (compositeTrigger.getSt() != null) {
 						if ((int) context.getExtendedState().getVariables()
 								.get("sample".concat(triggerGroupName)) < compositeTrigger.getSt().getFrequency()) {
-							return false;
+							continue;
 						}
 					}
 
 					if (compositeTrigger.getPt() != null) {
 						if ((int) context.getExtendedState().getVariables()
 								.get("prediction".concat(triggerGroupName)) < compositeTrigger.getPt().getFrequency()) {
-							return false;
+							continue;
 						}
 					}
 
 					if (compositeTrigger.getLt() != null) {
 						if ((int) context.getExtendedState().getVariables()
 								.get("label".concat(triggerGroupName)) < compositeTrigger.getLt().getFrequency()) {
-							return false;
+							continue;
 						}
 					}
+					trigger = true;
+					break;
+				}
+				
+				if (trigger) {
+					// reset counters
+					context.getExtendedState().getVariables().put("sample".concat(triggerGroupName), 0);
+					context.getExtendedState().getVariables().put("prediction".concat(triggerGroupName), 0);
+					context.getExtendedState().getVariables().put("label".concat(triggerGroupName), 0);
+					context.getExtendedState().getVariables().put("timer".concat(triggerGroupName), false);
+					return true;
+				}
+				else {
+					return false;
 				}
 
-				// reset counters
-				context.getExtendedState().getVariables().put("sample".concat(triggerGroupName), 0);
-				context.getExtendedState().getVariables().put("prediction".concat(triggerGroupName), 0);
-				context.getExtendedState().getVariables().put("label".concat(triggerGroupName), 0);
-				context.getExtendedState().getVariables().put("timer".concat(triggerGroupName), false);
-				return true;
 			}
 		};
 	}
