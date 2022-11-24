@@ -13,6 +13,7 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.lowcomote.panoptes.orchestrator.api.ActionExecutionRequest;
+import org.lowcomote.panoptes.orchestrator.api.AlgorithmCreationRequest;
 import org.lowcomote.panoptes.orchestrator.api.AlgorithmExecutionRequest;
 import org.lowcomote.panoptes.orchestrator.api.AlgorithmExecutionResult;
 import org.lowcomote.panoptes.orchestrator.api.BaseAlgorithmExecutionInfo;
@@ -44,10 +45,13 @@ import io.cloudevents.CloudEvent;
 import io.cloudevents.core.builder.CloudEventBuilder;
 import io.cloudevents.http.HttpMessageFactory;
 import io.cloudevents.http.impl.HttpMessageWriter;
+import panoptesDSL.Algorithm;
 import panoptesDSL.AlgorithmExecution;
+import panoptesDSL.BaseAlgorithm;
 import panoptesDSL.BaseAlgorithmExecution;
 import panoptesDSL.CompositeTrigger;
 import panoptesDSL.Deployment;
+import panoptesDSL.HigherOrderAlgorithm;
 import panoptesDSL.Model;
 import panoptesDSL.PanoptesDSLPackage;
 import panoptesDSL.Platform;
@@ -167,6 +171,32 @@ public class PlatformService {
 			if (d.getTriggerGroups().size() > 0) {
 				StateMachine<String, String> sm = buildStateMachine(d, stateMachineCache);
 				stateMachineRepository.addMachine(d.getName(), sm);
+			}
+		}
+		
+		ObjectMapper objectMapper = new ObjectMapper();
+		for(Algorithm a : newPlatform.getAlgorithms()) {
+			try {
+				logger.info("Triggering algorithm creation: " + a.getName());
+				a.getCodebase();
+				a.getName();
+				AlgorithmCreationRequest requestObject = new AlgorithmCreationRequest(a);
+				String runtimeName;
+				if( a.eClass().getClassifierID()==PanoptesDSLPackage.BASE_ALGORITHM) {
+					runtimeName = ((BaseAlgorithm) a).getRuntime().getName();
+				}
+				else {
+					runtimeName = ((HigherOrderAlgorithm) a).getRuntime().getName();
+				}
+				
+				CloudEvent event = CloudEventBuilder.v1().withId(UUID.randomUUID().toString())
+						.withType("org.lowcomote.panoptes.baseAlgorithmExecution.trigger")
+						.withSource(java.net.URI.create("panoptes.orchestrator"))
+						.withData(objectMapper.writeValueAsBytes(requestObject))
+						.withSubject(runtimeName).build();
+				sendEvent(event);
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 
