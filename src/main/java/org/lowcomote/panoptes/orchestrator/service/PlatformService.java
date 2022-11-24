@@ -189,7 +189,7 @@ public class PlatformService {
 				}
 				
 				CloudEvent event = CloudEventBuilder.v1().withId(UUID.randomUUID().toString())
-						.withType("org.lowcomote.panoptes.baseAlgorithmExecution.trigger")
+						.withType("org.lowcomote.panoptes.algorithm.create")
 						.withSource(java.net.URI.create("panoptes.orchestrator"))
 						.withData(objectMapper.writeValueAsBytes(requestObject))
 						.withSubject(runtimeName).build();
