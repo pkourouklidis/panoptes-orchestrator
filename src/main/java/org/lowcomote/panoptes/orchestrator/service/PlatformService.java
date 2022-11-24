@@ -176,7 +176,6 @@ public class PlatformService {
 		
 		ObjectMapper objectMapper = new ObjectMapper();
 		for(Algorithm a : newPlatform.getAlgorithms()) {
-			try {
 				logger.info("Triggering algorithm creation: " + a.getName());
 				a.getCodebase();
 				a.getName();
@@ -195,9 +194,6 @@ public class PlatformService {
 						.withData(objectMapper.writeValueAsBytes(requestObject))
 						.withSubject(runtimeName).build();
 				sendEvent(event);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
 		}
 
 		this.currentPlatform = newPlatform;

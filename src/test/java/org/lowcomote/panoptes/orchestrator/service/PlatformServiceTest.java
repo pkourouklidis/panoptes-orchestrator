@@ -31,6 +31,7 @@ public class PlatformServiceTest {
 		InputStream inputStream = classLoader.getResourceAsStream("emptyDeployment.xmi");
 		String platformXMI1 = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
 		// Initial Platform parsing
+		stubFor(post("/panoptes/default").willReturn(ok()));
 		assertDoesNotThrow(() -> platformService.updatePlatform(platformXMI1));
 		assertDoesNotThrow(() -> platformService.getDeployment("d1"));
 		assertNotNull(platformService.getDeployment("d1"));
@@ -58,10 +59,11 @@ public class PlatformServiceTest {
 		ClassLoader classLoader = getClass().getClassLoader();
 		InputStream inputStream = classLoader.getResourceAsStream("completeDeployment.xmi");
 		String platformXMI = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+		stubFor(post("/panoptes/default").willReturn(ok()));
 		platformService.updatePlatform(platformXMI);
 		String triggerGroupName = platformService.getDeployment("d2").getTriggerGroups().get(0).getName();
 
-		stubFor(post("/panoptes/default").willReturn(ok()));
+		
 
 		Message<String> m1 = MessageBuilder.withPayload("TRIGGER").setHeader("type", "sample").setHeader("count", 1)
 				.build();
@@ -95,9 +97,9 @@ public class PlatformServiceTest {
 		ClassLoader classLoader = getClass().getClassLoader();
 		InputStream inputStream = classLoader.getResourceAsStream("completeDeployment2.xmi");
 		String platformXMI = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+		stubFor(post("/panoptes/default").willReturn(ok()));
 		platformService.updatePlatform(platformXMI);
 		String triggerGroupName = "t1";
-		stubFor(post("/panoptes/default").willReturn(ok()));
 
 		Message<String> m1 = MessageBuilder.withPayload("TRIGGER").setHeader("type", "sample").setHeader("count", 1)
 				.build();
