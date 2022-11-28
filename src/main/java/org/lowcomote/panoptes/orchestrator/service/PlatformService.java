@@ -14,7 +14,8 @@ import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.lowcomote.panoptes.orchestrator.api.ActionExecutionRequest;
 import org.lowcomote.panoptes.orchestrator.api.AlgorithmCreationRequest;
-import org.lowcomote.panoptes.orchestrator.api.AlgorithmExecutionRequest;
+import org.lowcomote.panoptes.orchestrator.api.BaseAlgorithmExecutionRequest;
+import org.lowcomote.panoptes.orchestrator.api.HigherOrderAlgorithmExecutionRequest;
 import org.lowcomote.panoptes.orchestrator.api.AlgorithmExecutionResult;
 import org.lowcomote.panoptes.orchestrator.api.BaseAlgorithmExecutionInfo;
 import org.lowcomote.panoptes.orchestrator.api.SingleBaseAlgorithmExecutionInfo;
@@ -52,6 +53,7 @@ import panoptesDSL.BaseAlgorithmExecution;
 import panoptesDSL.CompositeTrigger;
 import panoptesDSL.Deployment;
 import panoptesDSL.HigherOrderAlgorithm;
+import panoptesDSL.HigherOrderAlgorithmExecution;
 import panoptesDSL.Model;
 import panoptesDSL.PanoptesDSLPackage;
 import panoptesDSL.Platform;
@@ -78,7 +80,7 @@ public class PlatformService {
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("xmi", new XMIResourceFactoryImpl());
 		this.logger = LoggerFactory.getLogger(PlatformService.class);
 		this.brokerURL = "http://broker-ingress.knative-eventing.svc.cluster.local/panoptes/default";
-	}
+		}
 
 	public Deployment getDeployment(String name) {
 		if (currentPlatform != null) {
@@ -223,20 +225,28 @@ public class PlatformService {
 				.source("IDLE")
 				.event("TRIGGER")
 				.guard(buildGuard(triggerGroup))
-				.action(buildAlgorithmExecutionTrigger(triggerGroup));
+				.action(buildBaseAlgorithmExecutionTrigger(triggerGroup));
 		}
 
 		// Add one transition per algorithm execution that reads the result the
 		// execution and sends an action execution request accordingly
 		for (AlgorithmExecution execution : newDeployment.getAlgorithmexecutions()) {
-			if (execution.eClass().getName().equals("BaseAlgorithmExecution")) {
+			builder.configureTransitions()
+				.withInternal()
+				.source("IDLE")
+				.event(execution.getName().concat("-EXECUTIONRESULT"))
+				.action(buildActionExecutionTrigger(execution));
+			
+			if (execution.eClass().getName().equals("HigherOrderAlgorithmExecution")) {
+				HigherOrderAlgorithmExecution HoExecution = (HigherOrderAlgorithmExecution) execution;
 				builder.configureTransitions()
 					.withInternal()
 					.source("IDLE")
-					.event(execution.getName().concat("-EXECUTIONRESULT"))
-					.action(buildActionExecutionTrigger((BaseAlgorithmExecution) execution));
+					.event(HoExecution.getAlgorithmExecution().getName().concat("-EXECUTIONRESULT-NOTIFY"))
+					.action(buildHigherOrderAlgorithmExecutionTrigger(HoExecution));
 			}
 		}
+		
 		StateMachine<String, String> sm = builder.build();
 		
 		// Initialise individual triggergroup states
@@ -267,6 +277,19 @@ public class PlatformService {
 			sm.getExtendedState().getVariables().put("timer".concat(triggerGroupName), timerInitial);
 			sm.getExtendedState().getVariables().put("lastTrigger".concat(triggerGroupName), lastTriggerInitial);
 		}
+		
+		for (AlgorithmExecution execution : newDeployment.getAlgorithmexecutions()) {
+			if (execution.eClass().getName().equals("HigherOrderAlgorithmExecution")) {
+				String lastTriggerInitial = java.time.Instant.now().toString();
+				if (stateMachineCache.containsKey(newDeployment.getName())) {
+					lastTriggerInitial = (String) stateMachineCache.get(newDeployment.getName()).getExtendedState()
+							.getVariables()
+							.getOrDefault("lastTrigger".concat(execution.getName()), java.time.Instant.now().toString());
+				}
+				sm.getExtendedState().getVariables().put("lastTrigger".concat(execution.getName()), lastTriggerInitial);
+			}
+		}
+		
 		return sm;
 	}
 
@@ -352,24 +375,25 @@ public class PlatformService {
 		};
 	}
 
-	private Action<String, String> buildAlgorithmExecutionTrigger(TriggerGroup triggerGroup) {
+	private Action<String, String> buildBaseAlgorithmExecutionTrigger(TriggerGroup triggerGroup) {
 		final String triggerGroupName = triggerGroup.getName();
 		return new Action<String, String>() {
 			@Override
-			public void execute(StateContext<String, String> context) {
+			public void execute(StateContext<String, String> context){
 				ObjectMapper objectMapper = new ObjectMapper();
 				String now = java.time.Instant.now().toString();
 				for (BaseAlgorithmExecution baseAlgorithmExecution : triggerGroup.getTargets()) {
 					try {
-						logger.info("Triggering algorithm execution: " + baseAlgorithmExecution.getName());
-						AlgorithmExecutionRequest requestObject = new AlgorithmExecutionRequest(baseAlgorithmExecution,
+						logger.info("Triggering base algorithm execution: " + baseAlgorithmExecution.getName());
+						BaseAlgorithmExecutionRequest requestObject = new BaseAlgorithmExecutionRequest(baseAlgorithmExecution,
 								context.getExtendedState().get("lastTrigger".concat(triggerGroupName), String.class),
 								now);
 						CloudEvent event = CloudEventBuilder.v1().withId(UUID.randomUUID().toString())
 								.withType("org.lowcomote.panoptes.baseAlgorithmExecution.trigger")
 								.withSource(java.net.URI.create("panoptes.orchestrator"))
 								.withData(objectMapper.writeValueAsBytes(requestObject))
-								.withSubject(baseAlgorithmExecution.getAlgorithm().getRuntime().getName()).build();
+								.withSubject(baseAlgorithmExecution.getAlgorithm().getRuntime().getName())
+								.build();
 						sendEvent(event);
 					} catch (Exception e) {
 						e.printStackTrace();
@@ -379,8 +403,43 @@ public class PlatformService {
 			}
 		};
 	}
+	
+	private Action<String, String> buildHigherOrderAlgorithmExecutionTrigger(HigherOrderAlgorithmExecution execution) {
+		return new Action<String, String>() {
+			@Override
+			public void execute(StateContext<String, String> context){
+				String deploymentName = ((Deployment)execution.eContainer()).getName();
+				String observedExecutionName = execution.getAlgorithmExecution().getName();
+				Pageable pageable = PageRequest.of(0, execution.getMaxDataPoints(), Sort.by(Sort.Direction.DESC, "endDate"));
+				List<AlgorithmExecutionResult> results = algorithmExecutionResultRepository
+						.findByDeploymentAndAlgorithmExecution(deploymentName, observedExecutionName, pageable);
+				
+				if (results.size() >= execution.getMinDataPoints()) {
+					ObjectMapper objectMapper = new ObjectMapper();
+					String now = java.time.Instant.now().toString();
+					logger.info("Triggering Higher order algorithm execution: " + execution.getName());
+					HigherOrderAlgorithmExecutionRequest requestObject = new HigherOrderAlgorithmExecutionRequest(execution, results,
+							context.getExtendedState().get("lastTrigger".concat(execution.getName()), String.class),
+							now);
+						try {
+						CloudEvent event = CloudEventBuilder.v1().withId(UUID.randomUUID().toString())
+								.withType("org.lowcomote.panoptes.higherOrderAlgorithmExecution.trigger")
+								.withSource(java.net.URI.create("panoptes.orchestrator"))
+								.withData(objectMapper.writeValueAsBytes(requestObject))
+								.withSubject(execution.getAlgorithm().getRuntime().getName())
+								.build();
+					
+							sendEvent(event);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					context.getExtendedState().getVariables().put("lastTrigger".concat(execution.getName()), now);
+				}
+			}
+		};
+	}
 
-	private Action<String, String> buildActionExecutionTrigger(BaseAlgorithmExecution execution) {
+	private Action<String, String> buildActionExecutionTrigger(AlgorithmExecution execution) {
 		return new Action<String, String>() {
 			@Override
 			public void execute(StateContext<String, String> context) {

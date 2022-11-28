@@ -35,6 +35,13 @@ public class EventService {
 			ingestAlgorithmExecutionResult(executionResult);
 			algorithmExecutionResultRepository.save(executionResult);
 		}
+		else if (event.getType().equals("org.lowcomote.panoptes.higherOrderAlgorithmExecution.result")) {
+			AlgorithmExecutionResult executionResult = mapData(event,
+					PojoCloudEventDataMapper.from(objectMapper, AlgorithmExecutionResult.class)).getValue();
+			executionResult.setExecutionType("higherOrderAlgorithmExecution");
+			ingestAlgorithmExecutionResult(executionResult);
+			algorithmExecutionResultRepository.save(executionResult);
+		}
 		else if (event.getType().equals("org.lowcomote.panoptes.trigger.sample")
 				|| event.getType().equals("org.lowcomote.panoptes.trigger.label")
 				|| event.getType().equals("org.lowcomote.panoptes.trigger.prediction")) {
@@ -47,11 +54,13 @@ public class EventService {
 	@SuppressWarnings("deprecation")
 	private void ingestAlgorithmExecutionResult(AlgorithmExecutionResult executionResult) {
 		StateMachine<String, String> sm = stateMachineRepository.getMachine(executionResult.getDeployment());
-		Message<String> m = MessageBuilder.withPayload(executionResult.getAlgorithmExecution().concat("-EXECUTIONRESULT"))
+		Message<String> m1 = MessageBuilder.withPayload(executionResult.getAlgorithmExecution().concat("-EXECUTIONRESULT"))
 				.setHeader("level", executionResult.getLevel()).setHeader("rawResult", executionResult.getRawResult())
 				.setHeader("startDate", executionResult.getStartDate().toInstant().toString())
 				.setHeader("endDate", executionResult.getEndDate().toInstant().toString()).build();
-		sm.sendEvent(m);
+		sm.sendEvent(m1);
+		Message<String> m2 = MessageBuilder.withPayload(executionResult.getAlgorithmExecution().concat("-EXECUTIONRESULT-NOTIFY")).build();
+		sm.sendEvent(m2);
 	}
 	
 	@SuppressWarnings("deprecation")

@@ -1,28 +1,40 @@
 package org.lowcomote.panoptes.orchestrator.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.lowcomote.panoptes.orchestrator.api.AlgorithmExecutionResult;
+import org.lowcomote.panoptes.orchestrator.repository.AlgorithmExecutionResultRepository;
 import org.lowcomote.panoptes.orchestrator.repository.StateMachineRepository;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.test.StateMachineTestPlan;
 import org.springframework.statemachine.test.StateMachineTestPlanBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
 @WireMockTest(proxyMode = true)
+@DataJpaTest
 public class PlatformServiceTest {
 	private PlatformService platformService;
 	private StateMachineRepository stateMachineRepository;
+	@MockBean
+	private AlgorithmExecutionResultRepository algorithmExecutionResultRepository;
 
 	@BeforeEach
 	void initService() {
 		stateMachineRepository = new StateMachineRepository();
-		platformService = new PlatformService(stateMachineRepository, null);
+		platformService = new PlatformService(stateMachineRepository, algorithmExecutionResultRepository);
 	}
 
 	@Test
@@ -99,6 +111,7 @@ public class PlatformServiceTest {
 		String platformXMI = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
 		stubFor(post("/panoptes/default").willReturn(ok()));
 		platformService.updatePlatform(platformXMI);
+		verify(1, postRequestedFor(urlEqualTo("/panoptes/default")));
 		String triggerGroupName = "t1";
 
 		Message<String> m1 = MessageBuilder.withPayload("TRIGGER").setHeader("type", "sample").setHeader("count", 1)
@@ -121,6 +134,7 @@ public class PlatformServiceTest {
 		plan.test();
 		
 		platformService.updatePlatform(platformXMI);
+		verify(2, postRequestedFor(urlEqualTo("/panoptes/default")));
 		StateMachineTestPlan<String, String> plan2 = StateMachineTestPlanBuilder.<String, String>builder()
 				.defaultAwaitTime(2)
 				.stateMachine(stateMachineRepository.getMachine("callcenter"))
@@ -132,10 +146,54 @@ public class PlatformServiceTest {
 					.sendEvent(m1)
 					.expectStates("IDLE")
 					.expectVariable("sample".concat(triggerGroupName), 0)
-//					.expectExtendedStateChanged(3) //disable check due to concurrency issue in the testing library
+					.expectExtendedStateChanged(3)
 					.expectTransition(1)
 					.and()
 				.build();
 		plan2.test();
+		verify(3, postRequestedFor(urlEqualTo("/panoptes/default")));
+	}
+	
+	@Test
+	void checkHoExecutionTrigger() throws Exception {
+		ClassLoader classLoader = getClass().getClassLoader();
+		InputStream inputStream = classLoader.getResourceAsStream("completeDeployment3.xmi");
+		String platformXMI = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+		stubFor(post("/panoptes/default").willReturn(ok()));
+		platformService.updatePlatform(platformXMI);
+		verify(2, postRequestedFor(urlEqualTo("/panoptes/default")));
+		List<AlgorithmExecutionResult> resultList = new ArrayList<AlgorithmExecutionResult>();
+		resultList.add(new AlgorithmExecutionResult());
+		when(algorithmExecutionResultRepository.findByDeploymentAndAlgorithmExecution(anyString(), anyString(), any())).thenReturn(resultList);
+		
+		Message<String> m1 = MessageBuilder.withPayload("exec1".concat("-EXECUTIONRESULT-NOTIFY"))
+			.setHeader("level", 1)
+			.setHeader("rawResult", "0.01")
+			.setHeader("startDate", "blah")
+			.setHeader("endDate", "blah")
+			.build();
+		StateMachineTestPlan<String, String> plan = StateMachineTestPlanBuilder.<String, String>builder()
+				.defaultAwaitTime(2)
+				.stateMachine(stateMachineRepository.getMachine("callcenter3"))
+				.step()
+					.sendEvent(m1)
+					.expectStates("IDLE")
+					.expectTransition(1)
+					.and()
+				.build();
+		plan.test();
+		verify(2, postRequestedFor(urlEqualTo("/panoptes/default")));
+		
+		resultList.add(new AlgorithmExecutionResult());
+		StateMachineTestPlan<String, String> plan2 = StateMachineTestPlanBuilder.<String, String>builder()
+				.defaultAwaitTime(2)
+				.stateMachine(stateMachineRepository.getMachine("callcenter3"))
+				.step()
+					.sendEvent(m1)
+					.expectStates("IDLE")
+					.and()
+				.build();
+		plan2.test();
+		verify(3, postRequestedFor(urlEqualTo("/panoptes/default")));
 	}
 }

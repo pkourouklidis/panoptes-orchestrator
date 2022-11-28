@@ -8,7 +8,7 @@ import panoptesDSL.BaseAlgorithmExecution;
 import panoptesDSL.Deployment;
 import panoptesDSL.parameterValueEntry;
 
-public class AlgorithmExecutionRequest {
+public class BaseAlgorithmExecutionRequest {
 	private String modelName;
 	private String deploymentName;
 	private String historicalFeatures;
@@ -19,7 +19,7 @@ public class AlgorithmExecutionRequest {
 	private String algorithmName;
 	private Map<String, String> parameters;
 
-	public AlgorithmExecutionRequest(BaseAlgorithmExecution baseAlgorithmExecution, String startDate, String endDate) {
+	public BaseAlgorithmExecutionRequest(BaseAlgorithmExecution baseAlgorithmExecution, String startDate, String endDate) {
 		this.modelName = ((Deployment) baseAlgorithmExecution.eContainer()).getMlModel().getName();
 		this.deploymentName = ((Deployment) baseAlgorithmExecution.eContainer()).getName();
 		this.historicalFeatures = String.join(",", baseAlgorithmExecution.getHistoricIOValues().stream()

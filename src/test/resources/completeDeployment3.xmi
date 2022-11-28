@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="ASCII"?>
+<org.lowcomote.panoptes:Platform xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:org.lowcomote.panoptes="http://www.lowcomote.org/panoptes/panoptesdsl" xmi:id="_7akLcNzbEeyJX6FwfOAF8A">
+  <deployments xmi:id="_8Tv2MNzbEeyJX6FwfOAF8A" name="callcenter3" mlModel="_cQ5TcOZMEeyqS7IBYz-byQ">
+    <algorithmexecutions xsi:type="org.lowcomote.panoptes:BaseAlgorithmExecution" xmi:id="_5PhD4DQ1Ee25aJhTaMbBMw" name="exec1" currentIOValues="_fAg7YOZMEeyqS7IBYz-byQ" historicIOValues="_fAg7YOZMEeyqS7IBYz-byQ" algorithm="_yyO3YDQ1Ee25aJhTaMbBMw">
+      <parameterValueMap key="pValue" value="0.04"/>
+    </algorithmexecutions>
+    <algorithmexecutions xsi:type="org.lowcomote.panoptes:HigherOrderAlgorithmExecution" name="exec2" algorithmExecution="_5PhD4DQ1Ee25aJhTaMbBMw" algorithm="hoTest" minDataPoints="2" maxDataPoints="3"/>
+    <triggerGroups xmi:id="_uu2hgDQ1Ee25aJhTaMbBMw" name="t1" targets="_5PhD4DQ1Ee25aJhTaMbBMw">
+      <compositeTriggers xmi:id="__2ibMDQ1Ee25aJhTaMbBMw">
+        <pt frequency="20"/>
+      </compositeTriggers>
+    </triggerGroups>
+    <actionExecutions xmi:id="_HwqZIDQ2Ee25aJhTaMbBMw" name="emailMe" action="_It0TcPa1Eeykad7bAjwi4A">
+      <parameterValueMap key="email" value="panagiotis.kourouklidis@bt.com"/>
+    </actionExecutions>
+    <actionExecutions name="retrainCallcenterLinear" action="retrainAction">
+      <parameterValueMap key="ioNames" value="wait_duration,service_duration,is_happy"/>
+      <parameterValueMap key="containerImage" value="registry.docker.nat.bt.com/panoptes/callcenter-model-training:latest"/>
+    </actionExecutions>
+  </deployments>
+  <algorithms xsi:type="org.lowcomote.panoptes:BaseAlgorithm" xmi:id="_yyO3YDQ1Ee25aJhTaMbBMw" name="kstest" codebase="https://blah" driftLevels="2" runtime="_wUAhcDQ1Ee25aJhTaMbBMw" strict="true">
+    <additionalParameters name="pValue" type="Real"/>
+    <supportedTypes>continuous</supportedTypes>
+  </algorithms>
+  <algorithms xsi:type="org.lowcomote.panoptes:HigherOrderAlgorithm" name="hoTest" codebase="https://blah" driftLevels="2" runtime="hoPythonRuntime"/>
+  <algorithmRuntimes xsi:type="org.lowcomote.panoptes:BaseAlgorithmRuntime" xmi:id="_wUAhcDQ1Ee25aJhTaMbBMw" name="pythonFunction"/>
+  <algorithmRuntimes xsi:type="org.lowcomote.panoptes:HigherOrderAlgorithmRuntime" name="hoPythonRuntime"/>
+  <featureStore xmi:id="_LZUHINzcEeyJX6FwfOAF8A">
+    <features xmi:id="_fAg7YOZMEeyqS7IBYz-byQ" name="wait_duration"/>
+    <features name="service_duration" type="orderedCategorical"/>
+    <labels xmi:id="_-Oq68DQ0Ee25aJhTaMbBMw" name="is_happy" type="categorical"/>
+  </featureStore>
+  <actions xmi:id="_It0TcPa1Eeykad7bAjwi4A" name="emailAction"/>
+  <actions name="retrainAction">
+    <additionalParameters name="ioNames" type="String" mandatory="true"/>
+    <additionalParameters name="containerImage" type="String" mandatory="true"/>
+  </actions>
+  <mlModels xmi:id="_cQ5TcOZMEeyqS7IBYz-byQ" name="callcenter-linear" inputs="_fAg7YOZMEeyqS7IBYz-byQ">
+    <output xmi:id="_3EjlUOcfEeyqS7IBYz-byQ" name="p1" label="_-Oq68DQ0Ee25aJhTaMbBMw"/>
+  </mlModels>
+</org.lowcomote.panoptes:Platform>
