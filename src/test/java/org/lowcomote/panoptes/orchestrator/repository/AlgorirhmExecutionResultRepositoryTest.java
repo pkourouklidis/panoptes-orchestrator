@@ -23,6 +23,23 @@ public class AlgorirhmExecutionResultRepositoryTest {
 	private AlgorithmExecutionResultRepository repository;
 	
 	@Test
+	void saveThenFindAlgorithmExecution() {
+		AlgorithmExecutionResult result = new AlgorithmExecutionResult();
+		result.setDeployment("testDeployment");
+		result.setAlgorithmExecution("testAlgorithmExecution");
+		result.setEndDate(Date.from(java.time.Instant.now()));
+		
+		Pageable pageable = PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "endDate"));
+		List<AlgorithmExecutionResult> results = repository.findByAlgorithmExecution("testAlgorithmExecution", pageable);
+		assertTrue(results.size() == 0);
+		
+		repository.save(result);
+		results = repository.findByAlgorithmExecution("testAlgorithmExecution", pageable);
+		assertTrue(results.size() == 1);
+		assertTrue(results.get(0).getAlgorithmExecution().equals("testAlgorithmExecution"));
+	}
+	
+	@Test
 	void saveThenFindByDeploymentAndAlgorithmExecution() {
 		AlgorithmExecutionResult result = new AlgorithmExecutionResult();
 		result.setDeployment("testDeployment");

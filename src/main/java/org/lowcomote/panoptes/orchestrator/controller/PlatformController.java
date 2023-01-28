@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.lowcomote.panoptes.orchestrator.api.BaseAlgorithmExecutionInfo;
+import org.lowcomote.panoptes.orchestrator.api.ConciseAlgorithmExecutionResults;
 import org.lowcomote.panoptes.orchestrator.api.DeploymentResponse;
 import org.lowcomote.panoptes.orchestrator.api.ModelResponse;
 import org.lowcomote.panoptes.orchestrator.api.SingleBaseAlgorithmExecutionInfo;
@@ -51,24 +52,31 @@ public class PlatformController {
 		return response;
 	}
 
+	@GetMapping(value = "/api/v1/algorithmExecutions/{algorithmExecutionName}", produces = "application/json")
+	public ConciseAlgorithmExecutionResults getSpecificExecutionResults(@PathVariable String algorithmExecutionName,
+			@RequestParam(required = true) Integer count) {
+		return platformService.getSpecificExecutionResults(algorithmExecutionName, count)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found"));
+	}
+
 	@GetMapping(value = "/api/v1/deployments/{deploymentName}/{executionType}/{executionName}", produces = "application/json")
-	public BaseAlgorithmExecutionInfo getSpecificExecutionResults(@PathVariable String deploymentName,
+	public BaseAlgorithmExecutionInfo getSpecificExecutionInfoAndResults(@PathVariable String deploymentName,
 			@PathVariable String executionType, @PathVariable String executionName,
 			@RequestParam(required = false) Integer count) {
 		if (count == null || count <= 0) {
 			count = 1;
 		}
-		BaseAlgorithmExecutionInfo response = platformService.getSpecificExecutionResults(deploymentName, executionName,
-				executionType, count);
+		BaseAlgorithmExecutionInfo response = platformService.getSpecificExecutionInfoAndResults(deploymentName,
+				executionName, executionType, count);
 		if (response == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found");
 		}
 		return response;
 	}
-	
+
 	@GetMapping(value = "/api/v1/deployments/{deploymentName}/{executionType}", produces = "application/json")
 	public List<SingleBaseAlgorithmExecutionInfo> getExecutionTypeResults(@PathVariable String deploymentName,
-			@PathVariable String executionType,@RequestParam(required = false) Integer count) {
+			@PathVariable String executionType, @RequestParam(required = false) Integer count) {
 		if (count == null || count <= 0) {
 			count = 1;
 		}
@@ -79,7 +87,7 @@ public class PlatformController {
 		}
 		return response;
 	}
-	
+
 	@GetMapping(value = "/api/v1/models", produces = "application/json")
 	public List<ModelResponse> getModels() {
 		List<Model> models = platformService.getModels();

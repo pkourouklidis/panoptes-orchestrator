@@ -1,7 +1,6 @@
 package org.lowcomote.panoptes.orchestrator.api;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import panoptesDSL.Deployment;
@@ -9,7 +8,7 @@ import panoptesDSL.HigherOrderAlgorithmExecution;
 import panoptesDSL.parameterValueEntry;
 
 public class HigherOrderAlgorithmExecutionRequest {
-	private List<AlgorithmExecutionResult> executionResults;
+	private int windowSize;
 	private String higherOrderAlgorithmName;
 	private String observedAlgorithmExecutionName;
 	private String higherOrderAlgorithmExecutionName;
@@ -19,8 +18,8 @@ public class HigherOrderAlgorithmExecutionRequest {
 	private String deploymentName;
 
 	public HigherOrderAlgorithmExecutionRequest(HigherOrderAlgorithmExecution execution,
-			List<AlgorithmExecutionResult> executionResults, String startDate, String endDate) {
-		this.executionResults = executionResults;
+			int windowSize, String startDate, String endDate) {
+		this.windowSize = windowSize;
 		this.higherOrderAlgorithmExecutionName = execution.getName();
 		this.higherOrderAlgorithmName = execution.getAlgorithm().getName();
 		this.observedAlgorithmExecutionName = execution.getAlgorithmExecution().getName();
@@ -33,12 +32,12 @@ public class HigherOrderAlgorithmExecutionRequest {
 		}
 	}
 
-	public List<AlgorithmExecutionResult> getExecutionResults() {
-		return executionResults;
+	public int getWindowSize() {
+		return windowSize;
 	}
 
-	public void setExecutionResults(List<AlgorithmExecutionResult> executionResults) {
-		this.executionResults = executionResults;
+	public void setWindowSize(int windowSize) {
+		this.windowSize = windowSize;
 	}
 
 	public String getHigherOrderalgorithmName() {

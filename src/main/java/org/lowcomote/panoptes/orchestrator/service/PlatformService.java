@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.eclipse.emf.common.util.URI;
@@ -15,6 +16,7 @@ import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.lowcomote.panoptes.orchestrator.api.ActionExecutionRequest;
 import org.lowcomote.panoptes.orchestrator.api.AlgorithmCreationRequest;
 import org.lowcomote.panoptes.orchestrator.api.BaseAlgorithmExecutionRequest;
+import org.lowcomote.panoptes.orchestrator.api.ConciseAlgorithmExecutionResults;
 import org.lowcomote.panoptes.orchestrator.api.HigherOrderAlgorithmExecutionRequest;
 import org.lowcomote.panoptes.orchestrator.api.AlgorithmExecutionResult;
 import org.lowcomote.panoptes.orchestrator.api.BaseAlgorithmExecutionInfo;
@@ -107,7 +109,28 @@ public class PlatformService {
 		return new ArrayList<Model>();
 	}
 
-	public BaseAlgorithmExecutionInfo getSpecificExecutionResults(String deploymentName, String algorithmExecutionName,
+	public Optional<ConciseAlgorithmExecutionResults> getSpecificExecutionResults(String algorithmExecutionName, int count) {
+		boolean found = false;
+		outerloop:
+		for (Deployment d : currentPlatform.getDeployments()) {
+			for (AlgorithmExecution a : d.getAlgorithmexecutions())
+				if (a.getName().equals(algorithmExecutionName)) {
+					found = true;
+					break outerloop;
+				}
+		}
+		
+		if (!found) {
+			return Optional.empty();
+		}
+		
+		Pageable pageable = PageRequest.of(0, count, Sort.by(Sort.Direction.DESC, "endDate"));
+		List<AlgorithmExecutionResult> results = algorithmExecutionResultRepository
+				.findByAlgorithmExecution(algorithmExecutionName, pageable);
+		return Optional.of(new ConciseAlgorithmExecutionResults(results));
+	}
+	
+	public BaseAlgorithmExecutionInfo getSpecificExecutionInfoAndResults(String deploymentName, String algorithmExecutionName,
 			String executionType, Integer count) {
 		Deployment deployment = getDeployment(deploymentName);
 		if (deployment != null) {
@@ -418,7 +441,7 @@ public class PlatformService {
 					ObjectMapper objectMapper = new ObjectMapper();
 					String now = java.time.Instant.now().toString();
 					logger.info("Triggering Higher order algorithm execution: " + execution.getName());
-					HigherOrderAlgorithmExecutionRequest requestObject = new HigherOrderAlgorithmExecutionRequest(execution, results,
+					HigherOrderAlgorithmExecutionRequest requestObject = new HigherOrderAlgorithmExecutionRequest(execution, results.size(),
 							context.getExtendedState().get("lastTrigger".concat(execution.getName()), String.class),
 							now);
 						try {
