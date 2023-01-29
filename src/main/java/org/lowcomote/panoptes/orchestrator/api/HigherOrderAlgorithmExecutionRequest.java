@@ -40,11 +40,11 @@ public class HigherOrderAlgorithmExecutionRequest {
 		this.windowSize = windowSize;
 	}
 
-	public String getHigherOrderalgorithmName() {
+	public String getHigherOrderAlgorithmName() {
 		return higherOrderAlgorithmName;
 	}
 
-	public void setHigherOrderalgorithmName(String higherOrderalgorithmName) {
+	public void setHigherOrderAlgorithmName(String higherOrderalgorithmName) {
 		higherOrderAlgorithmName = higherOrderalgorithmName;
 	}
 
